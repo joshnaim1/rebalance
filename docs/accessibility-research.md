@@ -202,18 +202,18 @@ The main research contribution of this synthesis is identifying where standard a
 
 ## References / End Citations
 
-**[S1]** Association of Registered Graphic Designers. *Access Ability 2: A Practical Handbook on Accessible Graphic Design*. Revised and supersized second edition. Cited pages include: introduction and human diversity (pp. 5-6), outliers and multimodality (pp. 12-13), cognitive load (p. 14), color use and tonal contrast (pp. 17-20), typography and typeface selection (pp. 23, 28-31), digital accessibility and input devices (pp. 36-37, 48-52), testing (pp. 56-57), and physical/environmental media (pp. 68-72).
+[1] Association of Registered Graphic Designers. *Access Ability 2: A Practical Handbook on Accessible Graphic Design*. Revised and supersized second edition. Cited pages include: introduction and human diversity (pp. 5-6), outliers and multimodality (pp. 12-13), cognitive load (p. 14), color use and tonal contrast (pp. 17-20), typography and typeface selection (pp. 23, 28-31), digital accessibility and input devices (pp. 36-37, 48-52), testing (pp. 56-57), and physical/environmental media (pp. 68-72).
 
-**[S2]** W3C Web Accessibility Initiative (WAI). *Designing for Web Accessibility: Tips for Getting Started*. Updated 16 July 2024. Cited for contrast, avoiding color-only communication, identifiable interactive elements, keyboard focus, consistent navigation, labels, feedback, headings, responsive layout, media alternatives, and controls for auto-starting content.
+[2] W3C Web Accessibility Initiative (WAI). *Designing for Web Accessibility: Tips for Getting Started*. Updated 16 July 2024. Cited for contrast, avoiding color-only communication, identifiable interactive elements, keyboard focus, consistent navigation, labels, feedback, headings, responsive layout, media alternatives, and controls for auto-starting content.
 
-**[S3]** Material Design. *Accessibility*. Cited for accessibility principles, assistive technology, hierarchy, color and contrast, logo/decorative element treatment, layout and typography, touch targets, accessibility text, alt text, and feedback guidance.
+[3] Material Design. *Accessibility*. Cited for accessibility principles, assistive technology, hierarchy, color and contrast, logo/decorative element treatment, layout and typography, touch targets, accessibility text, alt text, and feedback guidance.
 
-**[S4]** Fleury, Angelica. *UI/UX Design and Accessibility*. Slide deck. Cited for background/significance, affected user groups, poor design examples, guidelines, assistive examples, current issues, legal/ethical framing, and conclusion.
+[4] Fleury, Angelica. *UI/UX Design and Accessibility*. Slide deck. Cited for background/significance, affected user groups, poor design examples, guidelines, assistive examples, current issues, legal/ethical framing, and conclusion.
 
-**[S5]** *Accessible Colors: WCAG 2.0 AA and AAA Color Contrast Checker*. Cited for contrast-checking example showing an AA failure at 4.03 and adjusted passing contrast around 4.52-4.53.
+[5] *Accessible Colors: WCAG 2.0 AA and AAA Color Contrast Checker*. Cited for contrast-checking example showing an AA failure at 4.03 and adjusted passing contrast around 4.52-4.53.
 
-**[S6]** W3C Web Accessibility Initiative (WAI). *Understanding Success Criterion 1.4.3: Contrast (Minimum)*. Cited for WCAG 2.1 text contrast thresholds: 4.5:1 for normal text, 3:1 for large-scale text, no contrast requirement for logotypes, and rationale for luminance contrast.
+[6] W3C Web Accessibility Initiative (WAI). *Understanding Success Criterion 1.4.3: Contrast (Minimum)*. Cited for WCAG 2.1 text contrast thresholds: 4.5:1 for normal text, 3:1 for large-scale text, no contrast requirement for logotypes, and rationale for luminance contrast.
 
-**[S7]** W3C Web Accessibility Initiative (WAI). *Understanding Success Criterion 1.4.11: Non-text Contrast*. Cited for the 3:1 minimum contrast threshold for meaningful visual cues, user-interface components, states, and graphical objects.
+[7] W3C Web Accessibility Initiative (WAI). *Understanding Success Criterion 1.4.11: Non-text Contrast*. Cited for the 3:1 minimum contrast threshold for meaningful visual cues, user-interface components, states, and graphical objects.
 
-**[S8]** W3C Web Accessibility Initiative (WAI). *Accessibility Principles*. Cited for the four organizing principles of web accessibility: perceivable, operable, understandable, and robust.
+[8] W3C Web Accessibility Initiative (WAI). *Accessibility Principles*. Cited for the four organizing principles of web accessibility: perceivable, operable, understandable, and robust.
