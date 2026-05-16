@@ -1,12 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
-import { getSessions, saveSession } from '../utils/storage';
+import { getSessions, saveSession, deleteSession, getProfile } from '../utils/storage';
+import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS } from './FeelingCards';
+import CircularProgress from './CircularProgress';
+import SummaryCard from './SummaryCard';
+import TrendArrow from './TrendArrow';
+import EmptyState from './EmptyState';
+import AISourceDisclosure from './AISourceDisclosure';
+
+const SESSION_GOAL_SECONDS = 300; // 5-minute default session goal
 
 export default function SessionLog({ balance, gameHighScore, connected }) {
   const [sessions, setSessions] = useState(() => getSessions());
-  const [active, setActive] = useState(false);
+  // Session phase: 'idle' | 'feeling' | 'active' | 'summary'
+  const [sessionPhase, setSessionPhase] = useState('idle');
   const [elapsed, setElapsed] = useState(0);
   const [scoreSum, setScoreSum] = useState(0);
   const [scoreSamples, setScoreSamples] = useState(0);
+  const [timeInBalanced, setTimeInBalanced] = useState(0);
+
+  // Feeling state for pre-session step
+  const [feeling, setFeeling] = useState({ pain: null, fatigue: null });
+
+  // Last completed session data for summary comparison
+  const [lastSessionData, setLastSessionData] = useState(null);
+
+  // AI note generation status
+  const [generatingNote, setGeneratingNote] = useState(false);
+
+  // Delete confirmation dialog
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  // ARIA live region announcement
+  const [announcement, setAnnouncement] = useState('');
 
   const timerRef = useRef(null);
   const sampleRef = useRef(null);
@@ -17,16 +42,33 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
 
   // Auto-end session if connection drops
   useEffect(() => {
-    if (!connected && active) {
+    if (!connected && sessionPhase === 'active') {
       endSession();
     }
   }, [connected]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function startSession() {
-    setActive(true);
+  // Get previous session for comparison (second-to-last in the list)
+  function getPreviousSession() {
+    if (sessions.length >= 1) {
+      return sessions[sessions.length - 1];
+    }
+    return null;
+  }
+
+  function handleStartClick() {
+    // Transition to feeling phase
+    setSessionPhase('feeling');
+    setFeeling({ pain: null, fatigue: null });
+    setAnnouncement('Pre-session check: select your pain and fatigue levels.');
+  }
+
+  function beginSession() {
+    setSessionPhase('active');
     setElapsed(0);
     setScoreSum(0);
     setScoreSamples(0);
+    setTimeInBalanced(0);
+    setAnnouncement('Session started. Timer is running.');
 
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
     sampleRef.current = setInterval(() => {
@@ -34,6 +76,10 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
       if (b.isActive) {
         setScoreSum((s) => s + b.score);
         setScoreSamples((n) => n + 1);
+        // Track time in balanced zone (score >= 70 considered balanced)
+        if (b.score >= 70) {
+          setTimeInBalanced((t) => t + 0.5); // sampling every 500ms
+        }
       }
     }, 500);
   }
@@ -43,23 +89,54 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
     clearInterval(sampleRef.current);
     timerRef.current = null;
     sampleRef.current = null;
-    setActive(false);
+
+    // Show AI note generation indicator
+    setGeneratingNote(true);
+    setSessionPhase('summary');
 
     setScoreSum((currentSum) => {
       setScoreSamples((currentSamples) => {
-        const avgScore = currentSamples > 0 ? Math.round(currentSum / currentSamples) : 0;
-        const session = {
-          date: new Date().toISOString(),
-          duration: elapsed,
-          avgScore,
-          gameHighScore: gameHighScore || 0,
-        };
-        const updated = saveSession(session);
-        setSessions(updated);
+        setTimeInBalanced((currentTimeInBalanced) => {
+          const avgScore = currentSamples > 0 ? Math.round(currentSum / currentSamples) : 0;
+          const balancedSeconds = Math.round(currentTimeInBalanced);
+          const session = {
+            date: new Date().toISOString(),
+            duration: elapsed,
+            avgScore,
+            gameHighScore: gameHighScore || 0,
+            feeling: feeling.pain && feeling.fatigue ? feeling : undefined,
+            timeInBalanced: balancedSeconds,
+          };
+          const updated = saveSession(session);
+          setSessions(updated);
+
+          // Store for summary display
+          setLastSessionData({
+            ...session,
+            id: Date.now(),
+          });
+
+          // Generate summary announcement
+          const balancedPct = elapsed > 0 ? Math.round((balancedSeconds / elapsed) * 100) : 0;
+          setAnnouncement(`Session ended. You held steady balance for ${balancedPct}% of the session. Average score: ${avgScore}.`);
+
+          // Simulate AI note generation delay
+          setTimeout(() => {
+            setGeneratingNote(false);
+          }, 1500);
+
+          return 0;
+        });
         return 0;
       });
       return 0;
     });
+  }
+
+  function dismissSummary() {
+    setSessionPhase('idle');
+    setLastSessionData(null);
+    setAnnouncement('');
   }
 
   useEffect(() => {
@@ -82,78 +159,338 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
 
   const avgScore = scoreSamples > 0 ? Math.round(scoreSum / scoreSamples) : 0;
 
-  return (
-    <div className="space-y-6">
-      {/* Session controls */}
-      <div className="bg-card border border-card-border rounded-xl p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-text-primary">
-              {active ? 'Session In Progress' : connected ? 'Ready to Start' : 'Connect to Start'}
-            </h3>
-            {active && (
-              <div className="flex gap-6 mt-3 text-sm">
-                <div>
-                  <span className="text-text-muted">Duration: </span>
-                  <span className="font-mono text-text-primary">{formatDuration(elapsed)}</span>
-                </div>
-                <div>
-                  <span className="text-text-muted">Avg Score: </span>
-                  <span className="font-mono text-text-primary">{avgScore}</span>
-                </div>
-              </div>
-            )}
-          </div>
+  // Build summary stats for SummaryCard
+  function buildSummaryStats() {
+    if (!lastSessionData) return { stats: [], message: '' };
+
+    const prev = getPreviousSession();
+    const balancedPct = lastSessionData.duration > 0
+      ? Math.round((lastSessionData.timeInBalanced / lastSessionData.duration) * 100)
+      : 0;
+    const prevBalancedPct = prev && prev.duration > 0 && prev.timeInBalanced != null
+      ? Math.round((prev.timeInBalanced / prev.duration) * 100)
+      : 0;
+
+    const stats = [
+      {
+        label: 'Avg Score',
+        current: lastSessionData.avgScore,
+        previous: prev ? prev.avgScore : lastSessionData.avgScore,
+      },
+      {
+        label: 'Duration (s)',
+        current: lastSessionData.duration,
+        previous: prev ? prev.duration : lastSessionData.duration,
+      },
+      {
+        label: 'Time in Balanced (%)',
+        current: balancedPct,
+        previous: prevBalancedPct,
+      },
+    ];
+
+    // Plain-language message
+    let message;
+    if (prev && prev.timeInBalanced != null) {
+      const diff = balancedPct - prevBalancedPct;
+      if (diff > 0) {
+        message = `You held steady balance for ${balancedPct}% of the session — that's ${diff}% better than last time!`;
+      } else if (diff < 0) {
+        message = `You held steady balance for ${balancedPct}% of the session — that's ${Math.abs(diff)}% less than last time. Keep going!`;
+      } else {
+        message = `You held steady balance for ${balancedPct}% of the session — same as last time. Consistency is key!`;
+      }
+    } else {
+      message = `You held steady balance for ${balancedPct}% of the session. Great first effort!`;
+    }
+
+    return { stats, message };
+  }
+
+  // Render feeling phase
+  function renderFeelingPhase() {
+    return (
+      <div className="bg-card border border-card-border rounded-xl p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-text-primary">How are you feeling?</h2>
+        <p className="text-sm text-text-secondary">Select your current levels before we begin.</p>
+        <FeelingCards
+          options={PAIN_OPTIONS}
+          selected={feeling.pain}
+          onSelect={(val) => setFeeling((f) => ({ ...f, pain: val }))}
+          label="Pain Level"
+        />
+        <FeelingCards
+          options={FATIGUE_OPTIONS}
+          selected={feeling.fatigue}
+          onSelect={(val) => setFeeling((f) => ({ ...f, fatigue: val }))}
+          label="Fatigue Level"
+        />
+        <div className="flex justify-end pt-2">
           <button
-            onClick={active ? endSession : startSession}
-            disabled={!connected && !active}
-            className={`px-5 py-2.5 rounded-lg font-semibold transition-colors ${
-              active
-                ? 'bg-danger/10 border border-danger/30 text-danger hover:bg-danger/20'
-                : 'bg-balanced text-bg hover:bg-balanced/90 disabled:opacity-40 disabled:cursor-not-allowed'
-            }`}
+            onClick={beginSession}
+            disabled={!feeling.pain || !feeling.fatigue}
+            className="px-5 py-2.5 rounded-lg font-semibold bg-balanced text-bg hover:bg-balanced/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {active ? 'End Session' : 'Start Session'}
+            Begin Session
           </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Session history */}
-      <div>
-        <h3 className="text-lg font-semibold text-text-primary mb-3">Session History</h3>
-        {sessions.length === 0 ? (
-          <p className="text-text-muted text-center py-8">No sessions recorded yet. Start your first session above.</p>
-        ) : (
-          <div className="space-y-2">
-            {[...sessions].reverse().map((s, i) => (
-              <div
-                key={s.id || i}
-                className="bg-card border border-card-border rounded-lg p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-6">
-                  <span className="text-text-secondary text-sm">{formatDate(s.date)}</span>
-                  <span className="text-text-muted text-sm">
-                    {formatDuration(s.duration)}
-                  </span>
+  // Render active session
+  function renderActiveSession() {
+    return (
+      <div className="bg-card border border-card-border rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <CircularProgress elapsed={elapsed} total={SESSION_GOAL_SECONDS} />
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary">Session In Progress</h2>
+              <div className="flex gap-6 mt-3 text-sm">
+                <div>
+                  <span className="text-text-secondary">Duration: </span>
+                  <span className="font-mono text-text-primary">{formatDuration(elapsed)}</span>
                 </div>
-                <div className="flex items-center gap-6 text-sm">
-                  <div>
-                    <span className="text-text-muted">Avg Score: </span>
-                    <span className={`font-mono font-bold ${
-                      s.avgScore >= 80 ? 'text-balanced' :
-                      s.avgScore >= 50 ? 'text-warning' : 'text-danger'
-                    }`}>{s.avgScore}</span>
-                  </div>
-                  <div>
-                    <span className="text-text-muted">Game: </span>
-                    <span className="font-mono text-text-primary">{s.gameHighScore}</span>
-                  </div>
+                <div>
+                  <span className="text-text-secondary">Avg Score: </span>
+                  <span className="font-mono text-text-primary">{avgScore}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary">Time in Balanced: </span>
+                  <span className="font-mono text-text-primary">{formatDuration(Math.round(timeInBalanced))}</span>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
+          <button
+            onClick={endSession}
+            className="px-5 py-2.5 rounded-lg font-semibold bg-danger/10 border border-danger/30 text-danger hover:bg-danger/20 transition-colors"
+          >
+            End Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render summary phase
+  function renderSummaryPhase() {
+    const { stats, message } = buildSummaryStats();
+
+    if (generatingNote) {
+      return (
+        <div className="bg-card border border-card-border rounded-xl p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-text-primary">Session Complete!</h2>
+          <div className="flex items-center gap-3 text-text-secondary" aria-live="polite">
+            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span className="text-sm font-medium">Generating session note...</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-card border border-card-border rounded-xl p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-text-primary">Session Complete!</h2>
+        <SummaryCard stats={stats} message={message} />
+        <AISourceDisclosure
+          usedSources={['balance scores', 'session duration', 'self-reported pain/fatigue']}
+          notUsedSources={['dizziness', 'confidence', 'clinical observations']}
+        />
+        <div className="flex justify-end">
+          <button
+            onClick={dismissSummary}
+            className="px-5 py-2.5 rounded-lg font-semibold bg-balanced text-bg hover:bg-balanced/90 transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render idle state
+  function renderIdleControls() {
+    return (
+      <div className="bg-card border border-card-border rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">
+              {connected ? 'Ready to Start' : 'Connect to Start'}
+            </h2>
+          </div>
+          <button
+            onClick={handleStartClick}
+            disabled={!connected}
+            className="px-5 py-2.5 rounded-lg font-semibold bg-balanced text-bg hover:bg-balanced/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Start Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Export sessions as JSON file
+  function exportSessions() {
+    const profile = getProfile();
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      patientName: profile.name,
+      sessions: sessions,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `balanceback-sessions-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Handle session deletion with confirmation
+  function handleDeleteSession(sessionId) {
+    setDeleteConfirmId(sessionId);
+  }
+
+  function confirmDelete() {
+    if (deleteConfirmId != null) {
+      const updated = deleteSession(deleteConfirmId);
+      setSessions(updated);
+      setDeleteConfirmId(null);
+      setAnnouncement('Session deleted.');
+    }
+  }
+
+  function cancelDelete() {
+    setDeleteConfirmId(null);
+  }
+
+  // Render session history with TrendArrows
+  function renderHistory() {
+    const reversedSessions = [...sessions].reverse();
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-text-primary">Session History</h2>
+          {sessions.length > 0 && (
+            <button
+              onClick={exportSessions}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-card border border-card-border text-text-secondary hover:text-text-primary hover:border-balanced/50 transition-colors"
+            >
+              Export Sessions
+            </button>
+          )}
+        </div>
+        {sessions.length === 0 ? (
+          <EmptyState
+            heading="No sessions yet"
+            description="Connect your board and let's get started! Your session history will appear here."
+            action={connected ? { label: 'Start First Session', onClick: handleStartClick } : undefined}
+          />
+        ) : (
+          <div className="space-y-2">
+            {reversedSessions.map((s, i) => {
+              // Find the previous session (the one before this in chronological order)
+              // reversedSessions is newest-first, so the "previous" session is at index i+1
+              const prevSession = i < reversedSessions.length - 1 ? reversedSessions[i + 1] : null;
+
+              return (
+                <div
+                  key={s.id || i}
+                  className="bg-card border border-card-border rounded-lg p-4 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-6">
+                    <span className="text-text-secondary text-sm">{formatDate(s.date)}</span>
+                    <span className="text-text-secondary text-sm">
+                      {formatDuration(s.duration)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-6 text-sm">
+                    <div className="flex items-center gap-1">
+                      <span className="text-text-secondary">Avg Score: </span>
+                      <span className={`font-mono font-bold ${
+                        s.avgScore >= 80 ? 'text-balanced' :
+                        s.avgScore >= 50 ? 'text-warning' : 'text-danger'
+                      }`}>{s.avgScore}</span>
+                      {prevSession && (
+                        <TrendArrow current={s.avgScore} previous={prevSession.avgScore} />
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-text-secondary">Game: </span>
+                      <span className="font-mono text-text-primary">{s.gameHighScore}</span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteSession(s.id)}
+                      className="p-1.5 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                      aria-label={`Delete session from ${formatDate(s.date)}`}
+                      title="Delete session"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Delete confirmation dialog */}
+        {deleteConfirmId != null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+            <div className="bg-card border border-card-border rounded-xl p-6 max-w-sm mx-4 space-y-4">
+              <h3 id="delete-confirm-title" className="text-lg font-semibold text-text-primary">Delete Session?</h3>
+              <p className="text-sm text-text-secondary">This action cannot be undone. The session data will be permanently removed.</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={cancelDelete}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-card border border-card-border text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-danger/10 border border-danger/30 text-danger hover:bg-danger/20 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* ARIA live region for session announcements */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
+
+      {/* Session controls based on phase */}
+      {sessionPhase === 'idle' && renderIdleControls()}
+      {sessionPhase === 'feeling' && renderFeelingPhase()}
+      {sessionPhase === 'active' && renderActiveSession()}
+      {sessionPhase === 'summary' && renderSummaryPhase()}
+
+      {/* Session history */}
+      {renderHistory()}
     </div>
   );
 }

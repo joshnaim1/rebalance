@@ -67,12 +67,12 @@ export default function Calibration({ valuesRef, onComplete, onCancel }) {
             <p className="text-lg text-text-secondary leading-relaxed">
               Stand on the board with your weight <strong className="text-text-primary">evenly distributed</strong> between both feet.
             </p>
-            <div className="bg-bg/50 rounded-lg p-4 text-left text-sm text-text-muted space-y-2">
+            <div className="bg-bg/50 rounded-lg p-4 text-left text-sm text-text-secondary space-y-2">
               <p><strong className="text-text-secondary">Why calibrate?</strong></p>
               <p>Your sensors may not read identical values even when your weight is perfectly centered. Calibration captures a baseline so the dashboard knows what "balanced" looks like for <em>your</em> board.</p>
               <p>After calibrating, the balance meter will show accurate left/right percentages relative to your true center.</p>
             </div>
-            <p className="text-text-muted text-sm">
+            <p className="text-text-secondary text-sm">
               Hold still for {TOTAL_DURATION_S} seconds.
             </p>
             <div className="flex gap-3 justify-center pt-2">
@@ -86,10 +86,10 @@ export default function Calibration({ valuesRef, onComplete, onCancel }) {
               {onCancel && (
                 <button
                   onClick={onCancel}
-                  className="px-6 py-3 rounded-lg border border-card-border text-text-muted
-                             hover:text-text-secondary transition-colors"
+                  className="px-6 py-3 rounded-lg border border-card-border text-text-secondary
+                             hover:text-text-primary transition-colors"
                 >
-                  Skip
+                  Cancel
                 </button>
               )}
             </div>
@@ -103,9 +103,20 @@ export default function Calibration({ valuesRef, onComplete, onCancel }) {
               <div
                 className="h-full bg-balanced rounded-full transition-all duration-100"
                 style={{ width: `${progress * 100}%` }}
+                role="progressbar"
+                aria-valuenow={Math.round(progress * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Calibration progress"
               />
             </div>
-            <p className="text-text-muted text-sm">
+            <p className="text-text-secondary text-sm font-medium">
+              {Math.round(progress * 100)}% complete
+            </p>
+            <p className="text-text-secondary text-sm">
+              {Math.ceil(TOTAL_DURATION_S * (1 - progress))} seconds remaining
+            </p>
+            <p className="text-text-secondary text-sm">
               {sampleCount} / {SAMPLE_COUNT} samples
             </p>
             <div className="grid grid-cols-2 gap-4 font-mono text-sm text-text-secondary">
@@ -123,7 +134,7 @@ export default function Calibration({ valuesRef, onComplete, onCancel }) {
               <div>Left baseline: {result.left}</div>
               <div>Right baseline: {result.right}</div>
             </div>
-            <p className="text-text-muted text-xs">
+            <p className="text-text-secondary text-xs">
               Offset: {result.left - result.right > 0 ? 'left reads higher' : result.right - result.left > 0 ? 'right reads higher' : 'sensors are even'} by {Math.abs(result.left - result.right)} counts
             </p>
           </>
