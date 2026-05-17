@@ -100,7 +100,7 @@ Patients need **repeatable feedback** and motivation to keep practicing. Clinici
 | **Games** | HTML5 Canvas (`gameRenderer.js`, HiDPI canvas) |
 | **Browser I/O** | [Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API) (Chrome / Edge) |
 | **Storage** | `localStorage` — sessions, profile, calibration |
-| **AI (optional)** | [Google Gemini 2.5 Flash](https://ai.google.dev/) |
+| **AI** | [Google Gemini 2.5 Flash](https://ai.google.dev/) |
 | **Quality** | [Vitest](https://vitest.dev/) · Testing Library · [fast-check](https://fast-check.dev/) |
 
 </td>
