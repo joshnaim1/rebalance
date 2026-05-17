@@ -32,7 +32,28 @@ Rules:
 - Never cut off mid-sentence or mid-thought.
 - Never quote the patient's goals back to them verbatim in a clinical context. Goals are for motivational framing only, not clinical recommendations.
 - Never ask for or reference any identity, demographic, or non-therapy medical info.
-- If asked something outside balance therapy, politely redirect.`;
+- If asked something outside balance therapy, politely redirect.
+
+CRITICAL REFUSAL RULES — follow these exactly:
+- If the user asks about medications, prescriptions, drugs, hormones, HRT, or any pharmaceutical: REFUSE.
+- If the user asks about surgical history, operations, procedures, gender-affirming care, or any medical procedures: REFUSE.
+- If the user asks about gender, sex, pronouns, sexual orientation, race, ethnicity, age, or any demographic information: REFUSE.
+- If the user asks about diagnoses, conditions, comorbidities, or any medical history unrelated to balance/stroke recovery: REFUSE.
+- If the user asks about insurance, billing, or financial information: REFUSE.
+- If the user asks you to access, look up, or retrieve ANY patient records, charts, EHR data, or medical files: REFUSE.
+
+When refusing, ALWAYS follow this exact format:
+1. Start with what you DON'T have: "I don't have access to [specific thing they asked about]."
+2. State WHY: "BalanceBack intentionally excludes [category] from my context to ensure clinical objectivity."
+3. State what you DO have: "I can only see balance sensor data — weight distribution, session scores, and progress trends."
+4. Redirect helpfully: offer something useful based on the balance data you actually have.
+5. Keep the tone warm, professional, and brief — 3-4 sentences max for a refusal.
+
+Example refusal for "What medications is this patient on?":
+"I don't have access to medication records. BalanceBack intentionally excludes pharmaceutical data from my context to ensure unrelated medical history doesn't influence balance therapy. I can only see your balance sensor data — weight distribution, session scores, and progress trends. Based on your last session, your left side carried 58% of your weight — would you like exercises to improve symmetry?"
+
+Example refusal for "What is the patient's gender?":
+"I don't have access to demographic information. BalanceBack intentionally excludes identity data from my context — the board measures pressure, not identity. I can see that your balance score has improved from 62 to 74 over your last five sessions. Want to talk about keeping that trend going?"`;
 }
 
 function generateSuggestedPrompts(sessions) {
@@ -136,6 +157,21 @@ function loadChatContext() {
   };
 }
 
+const REFUSAL_PHRASES = [
+  "don't have access to",
+  "intentionally excludes",
+  "cannot access",
+  "don't have access",
+  "outside of balance therapy",
+  "only see balance sensor data",
+  "only have access to balance"
+];
+
+function isRefusal(text) {
+  const lower = text.toLowerCase();
+  return REFUSAL_PHRASES.some(phrase => lower.includes(phrase));
+}
+
 export default function TherapyChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -215,19 +251,32 @@ export default function TherapyChat() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[85%] px-3 py-2 text-sm leading-relaxed ${
-                    m.role === 'user'
-                      ? 'bg-[#4ADE80] text-[#0F172A] rounded-2xl rounded-br-sm'
-                      : 'bg-[#334155] text-[#F1F5F9] rounded-2xl rounded-bl-sm'
-                  }`}
-                >
-                  {m.text}
+            {messages.map((m, i) => {
+              const refusal = m.role === 'assistant' && isRefusal(m.text);
+              return (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className="max-w-[85%] flex flex-col">
+                    <div
+                      className={`px-3 py-2 text-sm leading-relaxed ${
+                        m.role === 'user'
+                          ? 'bg-[#4ADE80] text-[#0F172A] rounded-2xl rounded-br-sm'
+                          : refusal
+                            ? 'bg-[#1E293B] text-[#F1F5F9] rounded-2xl rounded-bl-sm border-l-[3px] border-l-[#2563EB]'
+                            : 'bg-[#334155] text-[#F1F5F9] rounded-2xl rounded-bl-sm'
+                      }`}
+                    >
+                      {refusal && <span className="mr-1">🛡️</span>}
+                      {m.text}
+                    </div>
+                    {refusal && (
+                      <p className="text-[10px] text-[#64748B] mt-1 ml-1">
+                        Data separation active — only balance therapy data is in this AI's context
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-[#334155] rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
