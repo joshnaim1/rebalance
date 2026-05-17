@@ -1,5 +1,9 @@
 <div align="center">
 
+<img src="public/rebalance-icon.svg" alt="ReBalance logo" width="128" height="128" />
+
+<br />
+
 # ReBalance
 
 ### Objective balance therapy · **~$74 in parts** · **zero bias**
