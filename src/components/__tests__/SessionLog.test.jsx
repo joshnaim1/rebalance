@@ -3,27 +3,34 @@ import { describe, it, expect, vi } from 'vitest';
 import SessionLog from '../SessionLog';
 
 // Mock storage utilities
+const mockSessions = [
+  {
+    id: 'session-1',
+    date: '2024-01-15T10:00:00Z',
+    duration: 300,
+    avgScore: 75,
+    gameHighScore: 12,
+    timeInBalanced: 180,
+  },
+  {
+    id: 'session-2',
+    date: '2024-01-16T10:00:00Z',
+    duration: 240,
+    avgScore: 80,
+    gameHighScore: 15,
+    timeInBalanced: 160,
+  },
+];
+
 vi.mock('../../utils/storage', () => ({
-  getSessions: vi.fn(() => [
-    {
-      id: 1,
-      date: '2024-01-15T10:00:00Z',
-      duration: 300,
-      avgScore: 75,
-      gameHighScore: 12,
-      timeInBalanced: 180,
-    },
-    {
-      id: 2,
-      date: '2024-01-16T10:00:00Z',
-      duration: 240,
-      avgScore: 80,
-      gameHighScore: 15,
-      timeInBalanced: 160,
-    },
-  ]),
+  getSessions: vi.fn(() => mockSessions),
+  loadAndCleanSessions: vi.fn(() => mockSessions),
   saveSession: vi.fn((session) => []),
+  upsertSession: vi.fn((session) => [...mockSessions, session]),
   deleteSession: vi.fn((id) => []),
+  deleteSessionById: vi.fn((id) => mockSessions.filter((s) => s.id !== id)),
+  updateSessionById: vi.fn((id, patch) => mockSessions),
+  generateSessionId: vi.fn(() => 'test-uuid-123'),
   getProfile: vi.fn(() => ({ name: 'Test User' })),
 }));
 

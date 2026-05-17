@@ -1,5 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { getSessions, saveSession, deleteSession, getProfile } from '../utils/storage';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  loadAndCleanSessions,
+  upsertSession,
+  deleteSessionById,
+  updateSessionById,
+  getProfile,
+  generateSessionId,
+} from '../utils/storage';
 import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS } from './FeelingCards';
 import CircularProgress from './CircularProgress';
 import SummaryCard from './SummaryCard';
@@ -8,10 +15,25 @@ import EmptyState from './EmptyState';
 import AISourceDisclosure from './AISourceDisclosure';
 
 const SESSION_GOAL_SECONDS = 300; // 5-minute default session goal
+const MIN_SESSION_DURATION = 2; // Minimum seconds for a valid session
+
+/**
+ * Session lifecycle state machine:
+ * idle -> feeling -> active -> ending -> completed (summary) -> idle
+ *
+ * Transitions:
+ * - idle -> feeling: user clicks "Start Session"
+ * - feeling -> active: user clicks "Begin Session" (session ID generated here)
+ * - active -> ending: user clicks "End Session" or board disconnects
+ * - ending -> completed: commitSession succeeds
+ * - completed -> idle: user clicks "Done"
+ */
 
 export default function SessionLog({ balance, gameHighScore, connected }) {
-  const [sessions, setSessions] = useState(() => getSessions());
-  // Session phase: 'idle' | 'feeling' | 'active' | 'summary'
+  // Load sessions with dedup/cleanup on first mount
+  const [sessions, setSessions] = useState(() => loadAndCleanSessions());
+
+  // Session phase: 'idle' | 'feeling' | 'active' | 'ending' | 'summary'
   const [sessionPhase, setSessionPhase] = useState('idle');
   const [elapsed, setElapsed] = useState(0);
   const [scoreSum, setScoreSum] = useState(0);
@@ -32,6 +54,16 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
 
   // ARIA live region announcement
   const [announcement, setAnnouncement] = useState('');
+
+  // --- Refs for accumulator state (read synchronously in endSession) ---
+  const scoreSumRef = useRef(0);
+  const scoreSamplesRef = useRef(0);
+  const timeInBalancedRef = useRef(0);
+
+  // --- Session commit guards ---
+  const activeSessionIdRef = useRef(null); // ID assigned when session starts
+  const isCommittingRef = useRef(false); // Lock to prevent concurrent commits
+  const committedIdsRef = useRef(new Set()); // Track all committed session IDs
 
   const timerRef = useRef(null);
   const sampleRef = useRef(null);
@@ -56,81 +88,151 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
   }
 
   function handleStartClick() {
-    // Transition to feeling phase
     setSessionPhase('feeling');
     setFeeling({ pain: null, fatigue: null });
     setAnnouncement('Pre-session check: select your pain and fatigue levels.');
   }
 
   function beginSession() {
+    // Generate stable session ID at start time
+    const sessionId = generateSessionId();
+    activeSessionIdRef.current = sessionId;
+    isCommittingRef.current = false;
+
     setSessionPhase('active');
     setElapsed(0);
     setScoreSum(0);
     setScoreSamples(0);
     setTimeInBalanced(0);
+    scoreSumRef.current = 0;
+    scoreSamplesRef.current = 0;
+    timeInBalancedRef.current = 0;
     setAnnouncement('Session started. Timer is running.');
 
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
     sampleRef.current = setInterval(() => {
       const b = balanceRef.current;
       if (b.isActive) {
+        scoreSumRef.current += b.score;
+        scoreSamplesRef.current += 1;
         setScoreSum((s) => s + b.score);
         setScoreSamples((n) => n + 1);
-        // Track time in balanced zone (score >= 70 considered balanced)
         if (b.score >= 70) {
-          setTimeInBalanced((t) => t + 0.5); // sampling every 500ms
+          timeInBalancedRef.current += 0.5;
+          setTimeInBalanced((t) => t + 0.5);
         }
       }
     }, 500);
   }
 
+  /**
+   * Guarded commit function — the ONLY path for writing completed sessions.
+   * Returns early if:
+   * - No active session exists
+   * - Session has already been committed (by ID)
+   * - Another commit is in progress (ref lock)
+   * - Session is too short or has no samples (accidental junk)
+   */
+  const commitSession = useCallback((sessionData) => {
+    const sessionId = sessionData.id;
+
+    // Guard: no active session
+    if (!sessionId) return false;
+
+    // Guard: already committed this ID
+    if (committedIdsRef.current.has(sessionId)) return false;
+
+    // Guard: concurrent commit lock
+    if (isCommittingRef.current) return false;
+
+    // Guard: minimum valid session (at least 2 seconds and at least 1 sample)
+    if (sessionData.duration < MIN_SESSION_DURATION && sessionData.scoreSamples === 0) {
+      return false;
+    }
+
+    // Acquire lock
+    isCommittingRef.current = true;
+    committedIdsRef.current.add(sessionId);
+
+    // Upsert — if ID already exists in storage, it updates rather than duplicating
+    const updated = upsertSession(sessionData);
+    setSessions(updated);
+
+    // Release lock
+    isCommittingRef.current = false;
+
+    return true;
+  }, []);
+
   function endSession() {
+    // Guard: only end from 'active' phase
+    if (sessionPhase !== 'active') return;
+
+    // Immediately transition to 'ending' to prevent re-entry
+    setSessionPhase('ending');
+
     clearInterval(timerRef.current);
     clearInterval(sampleRef.current);
     timerRef.current = null;
     sampleRef.current = null;
 
-    // Show AI note generation indicator
-    setGeneratingNote(true);
-    setSessionPhase('summary');
+    // Read accumulator values synchronously from refs
+    const currentSum = scoreSumRef.current;
+    const currentSamples = scoreSamplesRef.current;
+    const currentTimeInBalanced = timeInBalancedRef.current;
+    const sessionId = activeSessionIdRef.current;
 
-    setScoreSum((currentSum) => {
-      setScoreSamples((currentSamples) => {
-        setTimeInBalanced((currentTimeInBalanced) => {
-          const avgScore = currentSamples > 0 ? Math.round(currentSum / currentSamples) : 0;
-          const balancedSeconds = Math.round(currentTimeInBalanced);
-          const session = {
-            date: new Date().toISOString(),
-            duration: elapsed,
-            avgScore,
-            gameHighScore: gameHighScore || 0,
-            feeling: feeling.pain && feeling.fatigue ? feeling : undefined,
-            timeInBalanced: balancedSeconds,
-          };
-          const updated = saveSession(session);
-          setSessions(updated);
+    // Compute session metrics
+    const avgScore = currentSamples > 0 ? Math.round(currentSum / currentSamples) : 0;
+    const balancedSeconds = Math.round(currentTimeInBalanced);
 
-          // Store for summary display
-          setLastSessionData({
-            ...session,
-            id: Date.now(),
-          });
+    const session = {
+      id: sessionId,
+      date: new Date().toISOString(),
+      duration: elapsed,
+      avgScore,
+      gameHighScore: gameHighScore || 0,
+      feeling: feeling.pain && feeling.fatigue ? feeling : undefined,
+      timeInBalanced: balancedSeconds,
+      scoreSamples: currentSamples,
+      aiNote: null,
+      aiStatus: 'pending',
+    };
 
-          // Generate summary announcement
-          const balancedPct = elapsed > 0 ? Math.round((balancedSeconds / elapsed) * 100) : 0;
-          setAnnouncement(`Session ended. You held steady balance for ${balancedPct}% of the session. Average score: ${avgScore}.`);
+    // Commit the session (guarded — will not duplicate)
+    const committed = commitSession(session);
 
-          // Simulate AI note generation delay
-          setTimeout(() => {
-            setGeneratingNote(false);
-          }, 1500);
+    if (committed) {
+      setLastSessionData(session);
+      setGeneratingNote(true);
+      setSessionPhase('summary');
 
-          return 0;
-        });
-        return 0;
-      });
-      return 0;
-    });
+      // Reset accumulator state
+      setScoreSum(0);
+      setScoreSamples(0);
+      setTimeInBalanced(0);
+
+      // Generate summary announcement
+      const balancedPct = elapsed > 0 ? Math.round((balancedSeconds / elapsed) * 100) : 0;
+      setAnnouncement(`Session ended. You held steady balance for ${balancedPct}% of the session. Average score: ${avgScore}.`);
+
+      // Simulate AI note generation — updates existing session by ID, does NOT create new one
+      setTimeout(() => {
+        setGeneratingNote(false);
+        // Update the existing session with AI note
+        const aiNote = `Balance session completed. Average score: ${avgScore}. Time in balanced zone: ${balancedSeconds}s.`;
+        const updatedSessions = updateSessionById(sessionId, { aiNote, aiStatus: 'complete' });
+        setSessions(updatedSessions);
+        setLastSessionData((prev) => prev ? { ...prev, aiNote, aiStatus: 'complete' } : prev);
+      }, 1500);
+
+      // Clear active session ref
+      activeSessionIdRef.current = null;
+    } else {
+      // Commit was blocked (already committed or invalid) — just go to summary
+      setSessionPhase('summary');
+      activeSessionIdRef.current = null;
+    }
   }
 
   function dismissSummary() {
@@ -189,7 +291,6 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
       },
     ];
 
-    // Plain-language message
     let message;
     if (prev && prev.timeInBalanced != null) {
       const diff = balancedPct - prevBalancedPct;
@@ -354,14 +455,14 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
     URL.revokeObjectURL(url);
   }
 
-  // Handle session deletion with confirmation
+  // Handle session deletion with confirmation — uses stable ID
   function handleDeleteSession(sessionId) {
     setDeleteConfirmId(sessionId);
   }
 
   function confirmDelete() {
     if (deleteConfirmId != null) {
-      const updated = deleteSession(deleteConfirmId);
+      const updated = deleteSessionById(deleteConfirmId);
       setSessions(updated);
       setDeleteConfirmId(null);
       setAnnouncement('Session deleted.');
@@ -398,13 +499,11 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
         ) : (
           <div className="space-y-2">
             {reversedSessions.map((s, i) => {
-              // Find the previous session (the one before this in chronological order)
-              // reversedSessions is newest-first, so the "previous" session is at index i+1
               const prevSession = i < reversedSessions.length - 1 ? reversedSessions[i + 1] : null;
 
               return (
                 <div
-                  key={s.id || i}
+                  key={s.id}
                   className="bg-card border border-card-border rounded-lg p-4 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-6">
@@ -493,7 +592,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
       {sessionPhase === 'idle' && renderIdleControls()}
       {sessionPhase === 'feeling' && renderFeelingPhase()}
       {sessionPhase === 'active' && renderActiveSession()}
-      {sessionPhase === 'summary' && renderSummaryPhase()}
+      {(sessionPhase === 'ending' || sessionPhase === 'summary') && renderSummaryPhase()}
 
       {/* Session history */}
       {renderHistory()}
