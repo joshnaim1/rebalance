@@ -3,6 +3,7 @@ import { getProfile, saveProfile } from '../utils/storage';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS, DIZZINESS_OPTIONS, CONFIDENCE_OPTIONS } from './FeelingCards';
 import PrivacyPanel from './PrivacyPanel';
+import DataTransparency from './DataTransparency';
 
 const PRONOUN_SUGGESTIONS = ['he/him', 'she/her', 'they/them'];
 

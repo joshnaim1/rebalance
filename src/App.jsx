@@ -12,6 +12,7 @@ import PatientProfile from './components/PatientProfile';
 import PageTransition from './components/PageTransition';
 import GettingStartedWizard from './components/GettingStartedWizard';
 import TherapyChat from './components/TherapyChat';
+import DataTransparency from './components/DataTransparency';
 
 const TAB_ICONS = {
   balance: (
@@ -66,9 +67,22 @@ export default function App() {
     const profile = getProfile();
     return !profile.name;
   });
+  const [showTransparency, setShowTransparency] = useState(false);
+  const transparencyRef = useRef(null);
 
   const valuesRef = useRef(serial.values);
   useEffect(() => { valuesRef.current = serial.values; }, [serial.values]);
+
+  useEffect(() => {
+    if (!showTransparency) return;
+    function handleClickOutside(e) {
+      if (transparencyRef.current && !transparencyRef.current.contains(e.target)) {
+        setShowTransparency(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showTransparency]);
 
   const balance = calculateBalance(serial.values.left, serial.values.right, calibration);
 
@@ -107,6 +121,21 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-xl text-balanced-text font-bold tracking-tight">BalanceBack</h1>
+            <div className="relative" ref={transparencyRef}>
+              <button
+                onClick={() => setShowTransparency(v => !v)}
+                className="w-7 h-7 flex items-center justify-center rounded-full text-text-secondary hover:text-balanced-text hover:bg-balanced-soft transition-colors"
+                aria-label="Data transparency info"
+                title="What data does BalanceBack access?"
+              >
+                <span className="text-sm">🛡️</span>
+              </button>
+              {showTransparency && (
+                <div className="absolute top-full left-0 mt-2 z-50">
+                  <DataTransparency variant="popover" />
+                </div>
+              )}
+            </div>
             {patientName && (
               <span className="text-text-secondary text-sm">— {patientName}</span>
             )}
