@@ -9,8 +9,8 @@ import {
 
 const CANVAS_W = 800;
 const CANVAS_H = 400;
-const PLAYER_RADIUS = 18;
-const TARGET_RADIUS = 30;
+const PLAYER_RADIUS = 22;
+const TARGET_RADIUS = 36;
 const CAPTURE_DISTANCE = 40;
 const BASE_HOLD_TIME = 2.0;
 const MAX_TIME = 120;
