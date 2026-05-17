@@ -451,7 +451,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
               <ul className="space-y-2 text-sm text-white/80 text-left">
                 <li className="flex items-start gap-2">
                   <span className="text-[#4ADE80]">&#9650;&#9660;</span>
-                  <span>Lean left/right on your balance board to fly up and down (or use arrow keys / W/S)</span>
+                  <span>Lean left/right on your balance board to fly up and down</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-[#60A5FA]">&#9644;</span>

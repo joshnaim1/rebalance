@@ -421,7 +421,7 @@ export default function DoodleJumpGame({ balance, onScoreUpdate, onGameEnd, demo
               <ul className="space-y-2 text-sm text-white/80 text-left">
                 <li className="flex items-start gap-2">
                   <span className="text-[#4ADE80]">&#9664;&#9654;</span>
-                  <span>Lean left/right on your balance board to steer (or use arrow keys / A/D)</span>
+                  <span>Lean left/right on your balance board to steer</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-[#60A5FA]">&#9650;</span>
