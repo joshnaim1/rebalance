@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGameLoop } from '../hooks/useGameLoop';
+import { useHiDPICanvas } from '../hooks/useHiDPICanvas';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   COLORS, lerp, drawGradientBackground, createStarField, drawStarField,
@@ -33,6 +34,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
   });
 
   const reducedMotion = useReducedMotion();
+  const containerRef = useHiDPICanvas(canvasRef, CANVAS_W, CANVAS_H);
   const stateRef = useRef(null);
   const balanceRef = useRef(balance);
   const starsRef = useRef(null);
@@ -88,8 +90,12 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
   function gameLoop(dt) {
     const s = stateRef.current;
     const b = balanceRef.current;
-    const ctx = canvasRef.current?.getContext('2d');
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
     if (!ctx || !s) return;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(canvas.width / CANVAS_W, canvas.height / CANVAS_H);
 
     // Map 0.3-0.7 ratio range to full screen height
     const clampedRatio = Math.max(RATIO_MIN, Math.min(RATIO_MAX, b.ratio));
@@ -318,8 +324,11 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
 
   useEffect(() => {
     if (gameState === 'playing') return;
-    const ctx = canvasRef.current?.getContext('2d');
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
     if (!ctx) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(canvas.width / CANVAS_W, canvas.height / CANVAS_H);
     drawGradientBackground(ctx, CANVAS_W, CANVAS_H);
 
     if (gameState === 'ready') {
@@ -359,15 +368,13 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
       </div>
 
       <div
+        ref={containerRef}
         className="rounded-xl overflow-hidden border border-[#E8E5E0]"
-        style={{ ...shakeStyle, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
+        style={{ ...shakeStyle, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', aspectRatio: `${CANVAS_W}/${CANVAS_H}` }}
       >
         <canvas
           ref={canvasRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          className="w-full"
-          style={{ aspectRatio: `${CANVAS_W}/${CANVAS_H}` }}
+          className="w-full h-full"
         />
       </div>
 
