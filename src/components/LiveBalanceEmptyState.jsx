@@ -1,4 +1,5 @@
 import Card from './ui/Card';
+import ReBalanceLogo from './ReBalanceLogo';
 import BalanceMeterPreview from './BalanceMeterPreview';
 import SessionReadinessCard from './SessionReadinessCard';
 import { getSessions } from '../utils/storage';
@@ -53,11 +54,7 @@ export default function LiveBalanceEmptyState({ profileName, isCalibrated, onCon
         <div className="absolute -top-16 right-0 w-64 h-64 rounded-full bg-balanced/5 blur-3xl pointer-events-none" aria-hidden="true" />
 
         <div className="relative text-center">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-balanced-soft flex items-center justify-center mb-5">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-balanced-text" aria-hidden="true">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </div>
+          <ReBalanceLogo className="h-16 w-16 mx-auto mb-5" />
 
           <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-2">
             Start a Balance Session
