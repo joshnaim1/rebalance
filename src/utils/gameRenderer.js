@@ -1,24 +1,32 @@
-// Shared Canvas rendering utilities for BalanceBack games — light sky-blue theme
+// Shared Canvas rendering utilities for BalanceBack games — night sky theme
 
 export const COLORS = {
-  gradientTop: '#E8F4FD',
-  gradientBottom: '#F5FAFF',
-  particle: '#B8D4E8',
-  player: '#2D9C6F',
+  skyTop: '#0B1120',
+  skyMid: '#111B33',
+  skyBottom: '#1A2744',
+  horizon: '#1E3355',
+  star: '#FFFFFF',
+  starDim: '#A0B4D0',
+  player: '#4ADE80',
   playerGlow: '#4ADE80',
-  targetRing: '#2563EB',
-  progressArc: '#2563EB',
-  progressArcDone: '#2D9C6F',
-  obstacle: '#D1E5F4',
+  playerCore: '#86EFAC',
+  targetRing: '#60A5FA',
+  progressArc: '#60A5FA',
+  progressArcDone: '#4ADE80',
+  obstacle: '#1E3355',
   obstacleEdge: '#60A5FA',
-  gapZone: '#D4EDDA',
-  collisionFlash: '#FEE2E2',
-  hudText: '#1E293B',
-  hudSecondary: '#6B7280',
-  guideLine: '#CBD5E1',
-  scorePopup: '#2D9C6F',
-  danger: '#DC2626',
-  warning: '#D97706',
+  gapZone: 'rgba(74, 222, 128, 0.12)',
+  collisionFlash: 'rgba(248, 113, 113, 0.3)',
+  hudText: '#F1F5F9',
+  hudSecondary: '#94A3B8',
+  guideLine: '#334155',
+  scorePopup: '#4ADE80',
+  danger: '#F87171',
+  warning: '#FBBF24',
+  platform: '#1E3355',
+  platformEdge: '#60A5FA',
+  balanceBar: '#1E293B',
+  balanceBarTrack: '#334155',
 };
 
 export function lerp(current, target, factor) {
@@ -27,22 +35,54 @@ export function lerp(current, target, factor) {
 
 export function drawGradientBackground(ctx, w, h) {
   const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, COLORS.gradientTop);
-  grad.addColorStop(1, COLORS.gradientBottom);
+  grad.addColorStop(0, COLORS.skyTop);
+  grad.addColorStop(0.5, COLORS.skyMid);
+  grad.addColorStop(0.85, COLORS.skyBottom);
+  grad.addColorStop(1, COLORS.horizon);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
 }
 
+export function createStarField(count, w, h) {
+  const stars = [];
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      radius: Math.random() * 1.5 + 0.3,
+      baseOpacity: Math.random() * 0.5 + 0.3,
+      twinkleSpeed: Math.random() * 3 + 1,
+      twinkleOffset: Math.random() * Math.PI * 2,
+    });
+  }
+  return stars;
+}
+
+export function drawStarField(ctx, stars, time) {
+  for (let i = 0; i < stars.length; i++) {
+    const s = stars[i];
+    const twinkle = Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.3 + 0.7;
+    const opacity = s.baseOpacity * twinkle;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.fillStyle = s.radius > 1 ? COLORS.star : COLORS.starDim;
+    ctx.globalAlpha = opacity;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Kept for compatibility — wraps star field as drifting particles
 export function createBackgroundParticles(count, w, h) {
   const particles = [];
   for (let i = 0; i < count; i++) {
     particles.push({
       x: Math.random() * w,
       y: Math.random() * h,
-      radius: Math.random() * 2 + 1,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.2,
-      opacity: Math.random() * 0.15 + 0.25,
+      radius: Math.random() * 1.3 + 0.4,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.1,
+      opacity: Math.random() * 0.4 + 0.2,
     });
   }
   return particles;
@@ -60,7 +100,7 @@ export function updateAndDrawParticles(ctx, particles, w, h) {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.particle;
+    ctx.fillStyle = COLORS.star;
     ctx.globalAlpha = p.opacity;
     ctx.fill();
   }
@@ -74,7 +114,7 @@ export function drawTrail(ctx, positions, color, maxRadius) {
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, maxRadius * t * 0.7, 0, Math.PI * 2);
     ctx.fillStyle = color;
-    ctx.globalAlpha = t * 0.4;
+    ctx.globalAlpha = t * 0.35;
     ctx.fill();
   }
   ctx.globalAlpha = 1;

@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
-  COLORS, lerp, drawGradientBackground, createBackgroundParticles,
-  updateAndDrawParticles, drawTrail, createParticleBurst,
-  updateAndDrawBurstParticles,
+  COLORS, lerp, drawGradientBackground, createStarField, drawStarField,
+  drawTrail, createParticleBurst, updateAndDrawBurstParticles,
 } from '../utils/gameRenderer';
 
 const CANVAS_W = 800;
@@ -36,7 +35,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
   const reducedMotion = useReducedMotion();
   const stateRef = useRef(null);
   const balanceRef = useRef(balance);
-  const particlesRef = useRef(null);
+  const starsRef = useRef(null);
   const keyboardOffsetRef = useRef(0);
 
   useEffect(() => { balanceRef.current = balance; }, [balance]);
@@ -71,11 +70,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
 
   function startGame() {
     stateRef.current = initState();
-    particlesRef.current = [
-      createBackgroundParticles(20, CANVAS_W, CANVAS_H),
-      createBackgroundParticles(15, CANVAS_W, CANVAS_H),
-      createBackgroundParticles(10, CANVAS_W, CANVAS_H),
-    ];
+    starsRef.current = createStarField(120, CANVAS_W, CANVAS_H);
     setScore(0);
     setLives(MAX_LIVES);
     setShaking(false);
@@ -100,7 +95,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
     const clampedRatio = Math.max(RATIO_MIN, Math.min(RATIO_MAX, b.ratio));
     const normalizedRatio = (clampedRatio - RATIO_MIN) / (RATIO_MAX - RATIO_MIN);
     const targetY = normalizedRatio * (CANVAS_H - PLAYER_RADIUS * 4) + PLAYER_RADIUS * 2 + keyboardOffsetRef.current;
-    s.playerY = lerp(s.playerY, targetY, 0.1);
+    s.playerY = lerp(s.playerY, targetY, 0.05);
     s.playerY = Math.max(PLAYER_RADIUS, Math.min(CANVAS_H - PLAYER_RADIUS, s.playerY));
 
     // Trail
@@ -166,27 +161,17 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
 
     // --- Draw ---
     drawGradientBackground(ctx, CANVAS_W, CANVAS_H);
-
-    // 3-layer parallax particles
-    const speeds = [0.3, 0.6, 1.0];
-    for (let layer = 0; layer < 3; layer++) {
-      const particles = particlesRef.current[layer];
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].x -= effectiveSpeed * speeds[layer] * dt * 0.15;
-        if (particles[i].x < 0) particles[i].x = CANVAS_W;
-      }
-      updateAndDrawParticles(ctx, particles, CANVAS_W, CANVAS_H);
-    }
+    drawStarField(ctx, starsRef.current, s.elapsed);
 
     // Speed lines (subtle horizontal streaks that increase with speed)
     if (!reducedMotion && speedMultiplier > 1.2) {
       const lineCount = Math.min(Math.floor((speedMultiplier - 1.2) * 10), 8);
-      ctx.strokeStyle = COLORS.particle;
+      ctx.strokeStyle = '#334155';
       ctx.lineWidth = 1;
       for (let i = 0; i < lineCount; i++) {
-        const ly = (CANVAS_H / (lineCount + 1)) * (i + 1) + Math.sin(Date.now() * 0.01 + i) * 20;
-        const lx = Math.random() * CANVAS_W * 0.6 + CANVAS_W * 0.2;
-        ctx.globalAlpha = 0.3;
+        const ly = (CANVAS_H / (lineCount + 1)) * (i + 1) + Math.sin(s.elapsed * 3 + i) * 20;
+        const lx = (CANVAS_W * 0.3) + (i * 67) % (CANVAS_W * 0.5);
+        ctx.globalAlpha = 0.4;
         ctx.beginPath();
         ctx.moveTo(lx, ly);
         ctx.lineTo(lx + 30 + speedMultiplier * 15, ly);
@@ -201,8 +186,8 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
 
       // Top barrier
       const topGrad = ctx.createLinearGradient(obs.x, 0, obs.x + OBSTACLE_W, 0);
-      topGrad.addColorStop(0, obs.hit ? '#FECACA' : COLORS.obstacle);
-      topGrad.addColorStop(1, obs.hit ? '#FCA5A5' : '#C5DCF0');
+      topGrad.addColorStop(0, obs.hit ? '#7F1D1D' : COLORS.obstacle);
+      topGrad.addColorStop(1, obs.hit ? '#991B1B' : '#243B5C');
       ctx.fillStyle = topGrad;
       ctx.fillRect(obs.x, 0, OBSTACLE_W, obs.gapY);
 
@@ -300,7 +285,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
 
     // HUD: Lives as green dots
     for (let i = 0; i < MAX_LIVES; i++) {
-      ctx.fillStyle = i < s.lives ? COLORS.playerGlow : '#E8E5E0';
+      ctx.fillStyle = i < s.lives ? COLORS.playerGlow : '#334155';
       ctx.beginPath();
       ctx.arc(20 + i * 22, 55, 7, 0, Math.PI * 2);
       ctx.fill();

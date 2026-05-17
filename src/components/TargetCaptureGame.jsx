@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
-  COLORS, lerp, drawGradientBackground, createBackgroundParticles,
-  updateAndDrawParticles, drawTrail, createParticleBurst,
-  updateAndDrawBurstParticles,
+  COLORS, lerp, drawGradientBackground, createStarField, drawStarField,
+  drawTrail, createParticleBurst, updateAndDrawBurstParticles,
 } from '../utils/gameRenderer';
 
 const CANVAS_W = 800;
@@ -42,7 +41,7 @@ export default function TargetCaptureGame({ balance, onScoreUpdate }) {
   const reducedMotion = useReducedMotion();
   const stateRef = useRef(null);
   const balanceRef = useRef(balance);
-  const particlesRef = useRef(null);
+  const starsRef = useRef(null);
 
   useEffect(() => { balanceRef.current = balance; }, [balance]);
 
@@ -65,7 +64,7 @@ export default function TargetCaptureGame({ balance, onScoreUpdate }) {
 
   function startGame() {
     stateRef.current = initState();
-    particlesRef.current = createBackgroundParticles(40, CANVAS_W, CANVAS_H);
+    starsRef.current = createStarField(80, CANVAS_W, CANVAS_H);
     setScore(0);
     setGameStats(null);
     setGameState('playing');
@@ -79,7 +78,7 @@ export default function TargetCaptureGame({ balance, onScoreUpdate }) {
     if (!ctx || !s) return;
 
     const targetX = b.ratio * (CANVAS_W - PLAYER_RADIUS * 4) + PLAYER_RADIUS * 2;
-    s.playerX = lerp(s.playerX, targetX, 0.12);
+    s.playerX = lerp(s.playerX, targetX, 0.06);
 
     // Trail
     s.trail.push({ x: s.playerX, y: CANVAS_H / 2 });
@@ -117,7 +116,7 @@ export default function TargetCaptureGame({ balance, onScoreUpdate }) {
 
     // --- Draw ---
     drawGradientBackground(ctx, CANVAS_W, CANVAS_H);
-    updateAndDrawParticles(ctx, particlesRef.current, CANVAS_W, CANVAS_H);
+    drawStarField(ctx, starsRef.current, s.elapsed);
 
     // Guide line
     ctx.strokeStyle = COLORS.guideLine;
@@ -223,7 +222,7 @@ export default function TargetCaptureGame({ balance, onScoreUpdate }) {
     const barW = CANVAS_W - 80;
     const barH = 6;
     const barX = 40;
-    ctx.fillStyle = '#E8E5E0';
+    ctx.fillStyle = COLORS.balanceBarTrack;
     ctx.beginPath();
     ctx.roundRect(barX, barY, barW, barH, 3);
     ctx.fill();

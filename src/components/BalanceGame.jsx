@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import TargetCaptureGame from './TargetCaptureGame';
 import BalanceBirdGame from './BalanceBirdGame';
+import DoodleJumpGame from './DoodleJumpGame';
 
 const GAME_TABS = [
   { id: 'training', label: 'Balance Training' },
   { id: 'bird', label: 'Balance Bird' },
+  { id: 'doodle', label: 'Balance Jump' },
 ];
 
 export default function BalanceGame({ balance, onScoreUpdate }) {
@@ -38,6 +40,9 @@ export default function BalanceGame({ balance, onScoreUpdate }) {
       )}
       {activeGame === 'bird' && (
         <BalanceBirdGame balance={balance} onScoreUpdate={onScoreUpdate} />
+      )}
+      {activeGame === 'doodle' && (
+        <DoodleJumpGame balance={balance} onScoreUpdate={onScoreUpdate} />
       )}
     </div>
   );
