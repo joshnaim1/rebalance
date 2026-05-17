@@ -1,4 +1,4 @@
-// Shared Canvas rendering utilities for BalanceBack games — night sky theme
+// Shared Canvas rendering utilities for ReBalance games — night sky theme
 
 export const COLORS = {
   skyTop: '#0B1120',

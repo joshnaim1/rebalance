@@ -19,11 +19,13 @@ const JUMP_VELOCITY = -480;
 const MAX_TIME = 120;
 const PLATFORM_SPACING = 75;
 
-export default function DoodleJumpGame({ balance, onScoreUpdate }) {
+export default function DoodleJumpGame({ balance, onScoreUpdate, onGameEnd, demoMode }) {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('ready');
   const [score, setScore] = useState(0);
   const [gameStats, setGameStats] = useState(null);
+  const [savedToHistory, setSavedToHistory] = useState(false);
+  const gameStartTimeRef = useRef(null);
   const [highScore, setHighScore] = useState(() => {
     try { return parseInt(localStorage.getItem('balanceback_doodle_highscore') || '0', 10); }
     catch { return 0; }
@@ -95,8 +97,17 @@ export default function DoodleJumpGame({ balance, onScoreUpdate }) {
     starsRef.current = createStarField(100, CANVAS_W, CANVAS_H);
     setScore(0);
     setGameStats(null);
+    setSavedToHistory(false);
     keyboardOffsetRef.current = 0;
+    gameStartTimeRef.current = new Date().toISOString();
     setGameState('playing');
+  }
+
+  function endGameEarly() {
+    if (!stateRef.current) return;
+    stateRef.current.userEnded = true;
+    stateRef.current.gameOver = true;
+    finishGame(stateRef.current);
   }
 
   /* eslint-disable react-hooks/purity */
@@ -284,10 +295,16 @@ export default function DoodleJumpGame({ balance, onScoreUpdate }) {
 
   function finishGame(s) {
     const finalScore = s.score;
+    const elapsed = Math.floor(s.elapsed);
+    const outcome = s.userEnded ? 'user_ended' : s.elapsed >= MAX_TIME ? 'time_complete' : 'game_over';
+    const newHighScore = Math.max(finalScore, highScore);
+
     setGameStats({
       score: finalScore,
       platformsPassed: s.platformsPassed,
-      elapsed: Math.floor(s.elapsed),
+      elapsed,
+      outcome,
+      bestScore: newHighScore,
     });
     setGameState('gameover');
     if (finalScore > highScore) {
@@ -295,6 +312,25 @@ export default function DoodleJumpGame({ balance, onScoreUpdate }) {
       localStorage.setItem('balanceback_doodle_highscore', String(finalScore));
     }
     if (onScoreUpdate) onScoreUpdate(finalScore);
+
+    if (onGameEnd) {
+      onGameEnd({
+        id: crypto.randomUUID(),
+        type: 'game_session',
+        gameName: 'Balance Jump',
+        score: finalScore,
+        bestScoreAtTime: newHighScore,
+        durationSeconds: elapsed,
+        duration: elapsed,
+        outcome,
+        date: new Date().toISOString(),
+        startedAt: gameStartTimeRef.current,
+        endedAt: new Date().toISOString(),
+        inputMode: demoMode ? 'demo' : 'serial',
+        avgScore: 0,
+      });
+      setSavedToHistory(true);
+    }
   }
 
   useGameLoop(gameLoop, gameState === 'playing');
@@ -316,6 +352,16 @@ export default function DoodleJumpGame({ balance, onScoreUpdate }) {
     }
   }, [gameState]);
 
+  const formatDuration = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  const outcomeLabel = gameStats?.outcome === 'user_ended' ? 'Ended by user'
+    : gameStats?.outcome === 'time_complete' ? 'Time complete'
+    : 'Fell off';
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -329,10 +375,14 @@ export default function DoodleJumpGame({ balance, onScoreUpdate }) {
               {gameState === 'gameover' ? 'Play Again' : 'Start Game'}
             </button>
           )}
-          {gameState === 'gameover' && (
-            <span className="text-[#DC2626] font-medium">
-              Game Over — Height: {score}
-            </span>
+          {gameState === 'playing' && (
+            <button
+              onClick={endGameEarly}
+              className="px-5 py-2.5 rounded-lg border-2 border-[#DC2626] text-[#DC2626] bg-white font-semibold
+                         hover:bg-[#FEE2E2] transition-colors"
+            >
+              End Game
+            </button>
           )}
         </div>
         <div className="text-[#6B7280] text-sm">
@@ -359,22 +409,45 @@ export default function DoodleJumpGame({ balance, onScoreUpdate }) {
       )}
 
       {gameState === 'gameover' && gameStats && (
-        <div className="bg-white border border-[#E8E5E0] rounded-xl p-5 space-y-3"
+        <div className="bg-white border border-[#E8E5E0] rounded-xl p-6 space-y-5"
              style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <h3 className="text-[#1E293B] font-semibold text-lg">Jump Complete</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-[#1E293B]">Game Over</h3>
+            <p className="text-[#6B7280] text-sm mt-1">Balance Jump</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#2D9C6F]">{gameStats.score}</div>
-              <div className="text-xs text-[#6B7280]">Max Height</div>
+              <div className="text-3xl font-bold text-[#2D9C6F]">{gameStats.score}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Max Height</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#1E293B]">{gameStats.platformsPassed}</div>
-              <div className="text-xs text-[#6B7280]">Platforms Landed</div>
+              <div className="text-3xl font-bold text-[#1E293B]">{gameStats.bestScore}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Best</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#1E293B]">{gameStats.elapsed}s</div>
-              <div className="text-xs text-[#6B7280]">Time</div>
+              <div className="text-3xl font-bold text-[#1E293B]">{formatDuration(gameStats.elapsed)}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Duration</div>
             </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-[#1E293B]">{gameStats.platformsPassed}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Platforms Landed</div>
+            </div>
+          </div>
+          <div className="text-center text-sm text-[#6B7280]">
+            Result: {outcomeLabel}
+          </div>
+          {savedToHistory && (
+            <div className="text-center text-sm text-[#2D9C6F] font-medium">
+              Saved to Session History
+            </div>
+          )}
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={startGame}
+              className="px-5 py-3 rounded-lg font-semibold bg-[#1A5C42] text-white hover:bg-[#1A5C42]/90 transition-colors"
+            >
+              Play Again
+            </button>
           </div>
         </div>
       )}

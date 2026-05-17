@@ -11,20 +11,18 @@ export default function SerialConnect({ serial }) {
 
   return (
     <div className="flex items-center gap-3">
-      {/* Connection status dot and text label */}
-      <div className="flex items-center gap-2">
-        <div className={`w-2.5 h-2.5 rounded-full ${
+      {/* Connection status pill */}
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${
+        serial.demoMode
+          ? 'bg-warning-soft border-warning/20 text-warning-text'
+          : boardConnected
+            ? 'bg-balanced-soft border-balanced/20 text-balanced-text'
+            : 'bg-card border-card-border text-text-secondary'
+      }`}>
+        <div className={`w-2 h-2 rounded-full ${
           serial.demoMode ? 'bg-warning' : boardConnected ? 'bg-balanced' : 'bg-text-muted'
         }`} aria-hidden="true" />
-        <span className={`text-xs font-medium ${
-          serial.demoMode
-            ? 'text-warning'
-            : boardConnected
-              ? 'text-balanced'
-              : 'text-text-secondary'
-        }`}>
-          {statusLabel}
-        </span>
+        <span>{statusLabel}</span>
       </div>
 
       {serial.demoMode ? (
@@ -58,7 +56,7 @@ export default function SerialConnect({ serial }) {
             : 'bg-card border-card-border text-text-secondary hover:text-text-primary'
         }`}
       >
-        {serial.demoMode ? 'Stop Demo' : 'Demo Mode'}
+        {serial.demoMode ? 'Stop Demo' : 'Try Demo Mode'}
       </button>
     </div>
   );

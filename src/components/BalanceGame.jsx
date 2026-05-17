@@ -9,7 +9,7 @@ const GAME_TABS = [
   { id: 'doodle', label: 'Balance Jump' },
 ];
 
-export default function BalanceGame({ balance, onScoreUpdate }) {
+export default function BalanceGame({ balance, onScoreUpdate, onGameEnd, demoMode }) {
   const [activeGame, setActiveGame] = useState('training');
 
   return (
@@ -36,13 +36,13 @@ export default function BalanceGame({ balance, onScoreUpdate }) {
 
       {/* Active game */}
       {activeGame === 'training' && (
-        <TargetCaptureGame balance={balance} onScoreUpdate={onScoreUpdate} />
+        <TargetCaptureGame balance={balance} onScoreUpdate={onScoreUpdate} onGameEnd={onGameEnd} demoMode={demoMode} />
       )}
       {activeGame === 'bird' && (
-        <BalanceBirdGame balance={balance} onScoreUpdate={onScoreUpdate} />
+        <BalanceBirdGame balance={balance} onScoreUpdate={onScoreUpdate} onGameEnd={onGameEnd} demoMode={demoMode} />
       )}
       {activeGame === 'doodle' && (
-        <DoodleJumpGame balance={balance} onScoreUpdate={onScoreUpdate} />
+        <DoodleJumpGame balance={balance} onScoreUpdate={onScoreUpdate} onGameEnd={onGameEnd} demoMode={demoMode} />
       )}
     </div>
   );
