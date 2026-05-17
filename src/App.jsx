@@ -1,10 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSerial } from './hooks/useSerial';
 import { calculateBalance } from './utils/balanceCalc';
-import { getCalibration, getProfile } from './utils/storage';
+import { getCalibration, getProfile, upsertSession } from './utils/storage';
 import SerialConnect from './components/SerialConnect';
 import Calibration from './components/Calibration';
-import BalanceMeter from './components/BalanceMeter';
 import BalanceGame from './components/BalanceGame';
 import SessionLog from './components/SessionLog';
 import ProgressChart from './components/ProgressChart';
@@ -13,11 +12,15 @@ import PageTransition from './components/PageTransition';
 import GettingStartedWizard from './components/GettingStartedWizard';
 import TherapyChat from './components/TherapyChat';
 import DataTransparency from './components/DataTransparency';
+import HomePage from './components/HomePage';
+
+const DISPLAY_UPDATE_MS = 100;
 
 const TAB_ICONS = {
-  balance: (
+  home: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
     </svg>
   ),
   game: (
@@ -49,7 +52,7 @@ const TAB_ICONS = {
 };
 
 const TABS = [
-  { id: 'balance', label: 'Live Balance' },
+  { id: 'home', label: 'Home' },
   { id: 'game', label: 'Game' },
   { id: 'sessions', label: 'Sessions' },
   { id: 'progress', label: 'Progress' },
@@ -58,7 +61,7 @@ const TABS = [
 
 export default function App() {
   const serial = useSerial();
-  const [activeTab, setActiveTab] = useState('balance');
+  const [activeTab, setActiveTab] = useState('home');
   const [calibration, setCalibration] = useState(() => getCalibration());
   const [showCalibration, setShowCalibration] = useState(false);
   const [patientName, setPatientName] = useState(() => getProfile().name);
@@ -84,7 +87,19 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showTransparency]);
 
+  // Raw balance — always current, used for game input
   const balance = calculateBalance(serial.values.left, serial.values.right, calibration);
+
+  // Throttled display balance — updates at most every 100ms
+  const [displayedBalance, setDisplayedBalance] = useState(balance);
+  const lastDisplayUpdateRef = useRef(0);
+
+  useEffect(() => {
+    const now = performance.now();
+    if (now - lastDisplayUpdateRef.current < DISPLAY_UPDATE_MS) return;
+    lastDisplayUpdateRef.current = now;
+    setDisplayedBalance(balance);
+  }, [balance]);
 
   const handleCalibrationComplete = useCallback((cal) => {
     setCalibration(cal);
@@ -95,13 +110,17 @@ export default function App() {
     setGameHighScore((prev) => Math.max(prev, score));
   }, []);
 
+  const handleGameEnd = useCallback((gameResult) => {
+    upsertSession(gameResult);
+  }, []);
+
   const handleWizardComplete = useCallback((name) => {
     setPatientName(name);
     setShowWizard(false);
   }, []);
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary font-sans">
+    <div className="min-h-screen text-text-primary font-sans" style={{ background: 'radial-gradient(circle at 50% 8%, rgba(45,156,111,0.07), transparent 40%), #FAF8F5' }}>
       {/* Getting Started Wizard */}
       {showWizard && (
         <GettingStartedWizard onComplete={handleWizardComplete} />
@@ -120,13 +139,26 @@ export default function App() {
       <header className="bg-card border-b border-card-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl text-balanced-text font-bold tracking-tight">BalanceBack</h1>
+            {/* Icon + wordmark */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-balanced-soft flex items-center justify-center" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-balanced-text">
+                  <rect x="2" y="8" width="20" height="8" rx="3" />
+                  <circle cx="8" cy="12" r="1.5" fill="currentColor" />
+                  <circle cx="16" cy="12" r="1.5" fill="currentColor" />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-xl text-balanced-text font-bold tracking-tight leading-tight">ReBalance</h1>
+                <span className="text-[10px] text-text-muted font-medium tracking-wide uppercase leading-tight">Objective Balance Therapy</span>
+              </div>
+            </div>
             <div className="relative" ref={transparencyRef}>
               <button
                 onClick={() => setShowTransparency(v => !v)}
                 className="w-7 h-7 flex items-center justify-center rounded-full text-text-secondary hover:text-balanced-text hover:bg-balanced-soft transition-colors"
                 aria-label="Data transparency info"
-                title="What data does BalanceBack access?"
+                title="What data does ReBalance access?"
               >
                 <span className="text-sm">🛡️</span>
               </button>
@@ -144,18 +176,13 @@ export default function App() {
             <button
               onClick={() => setShowCalibration(true)}
               disabled={!serial.connected}
-              title={!serial.connected ? 'Connect board to calibrate' : undefined}
-              className="text-xs px-2.5 py-1 rounded border border-card-border text-text-secondary
-                         hover:text-text-primary transition-colors
+              title={!serial.connected ? 'Connect the board before calibration' : undefined}
+              className="text-xs px-3 py-1.5 rounded-full border border-card-border text-text-secondary
+                         hover:text-text-primary hover:border-border-strong transition-colors
                          disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {calibration ? 'Recalibrate' : 'Calibrate'}
+              {calibration ? 'Recalibrate Center' : 'Calibrate'}
             </button>
-            {!serial.connected && (
-              <span className="text-xs text-text-secondary">
-                Connect board to calibrate
-              </span>
-            )}
             <span role="status">
               <SerialConnect serial={serial} />
             </span>
@@ -164,16 +191,16 @@ export default function App() {
       </header>
 
       {/* Tab navigation */}
-      <nav className="border-b border-card-border">
+      <nav className="border-b border-card-border bg-card">
         <div className="max-w-6xl mx-auto px-4 flex items-center gap-1 py-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 text-sm font-medium transition-colors min-h-11 ${
+              className={`flex items-center gap-2 text-sm font-medium transition-all min-h-11 rounded-full px-4 py-2.5 ${
                 activeTab === tab.id
-                  ? 'bg-balanced-soft text-balanced-text rounded-full px-4 py-2.5'
-                  : 'text-text-secondary hover:text-text-primary px-4 py-2.5'
+                  ? 'bg-balanced-soft text-balanced-text font-bold shadow-[inset_0_0_0_1px_rgba(45,156,111,0.12)]'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-card-border/30'
               }`}
             >
               {TAB_ICONS[tab.id]}
@@ -184,16 +211,23 @@ export default function App() {
       </nav>
 
       {/* Tab content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-6 py-8" style={{ minHeight: 'calc(100vh - 140px)' }}>
         <PageTransition activeKey={activeTab}>
-          {activeTab === 'balance' && (
-            <BalanceMeter balance={balance} connected={serial.connected} demoMode={serial.demoMode} calibrated={!!calibration} />
+          {activeTab === 'home' && (
+            <HomePage
+              patientName={patientName}
+              isConnected={serial.connected}
+              isCalibrated={!!calibration}
+              onConnect={serial.connect}
+              onDemo={serial.enableDemo}
+              onNavigate={setActiveTab}
+            />
           )}
           {activeTab === 'game' && (
-            <BalanceGame balance={balance} onScoreUpdate={handleGameScore} />
+            <BalanceGame balance={balance} onScoreUpdate={handleGameScore} onGameEnd={handleGameEnd} demoMode={serial.demoMode} />
           )}
           {activeTab === 'sessions' && (
-            <SessionLog balance={balance} gameHighScore={gameHighScore} connected={serial.connected} />
+            <SessionLog balance={displayedBalance} gameHighScore={gameHighScore} connected={serial.connected} demoMode={serial.demoMode} calibrated={!!calibration} />
           )}
           {activeTab === 'progress' && (
             <ProgressChart />

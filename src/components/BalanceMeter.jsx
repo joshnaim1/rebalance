@@ -4,6 +4,7 @@ import { useStreak } from '../hooks/useStreak';
 import ZoneBadge from './ZoneBadge';
 import AnimatedCounter from './AnimatedCounter';
 import ConfettiEffect from './ConfettiEffect';
+import LiveBalanceEmptyState from './LiveBalanceEmptyState';
 
 function ActiveMeter({ balance }) {
   const [elapsed, setElapsed] = useState(0);
@@ -30,20 +31,6 @@ function ActiveMeter({ balance }) {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const zoneColor = {
-    balanced: 'text-balanced',
-    warning: 'text-warning',
-    danger: 'text-danger',
-    idle: 'text-text-muted',
-  };
-
-  const zoneBg = {
-    balanced: 'bg-balanced',
-    warning: 'bg-warning',
-    danger: 'bg-danger',
-    idle: 'bg-text-muted',
-  };
-
   const zoneGlow = {
     balanced: 'shadow-[0_0_12px_rgba(45,156,111,0.5)]',
     warning: 'shadow-[0_0_12px_rgba(217,119,6,0.5)]',
@@ -62,12 +49,15 @@ function ActiveMeter({ balance }) {
 
   const leftPct = balance.percentage.left;
   const rightPct = balance.percentage.right;
+  const zi = balance.zoneInfo;
+  const scoreColor = zi ? { color: zi.scoreColor } : {};
+  const markerColor = zi ? zi.markerColor : '#6B7280';
 
   return (
     <>
-      {/* Score — wrapped in ARIA live region for screen reader announcements */}
+      {/* Score — uses zone-derived color so it always matches the marker */}
       <div aria-live="polite" aria-atomic="true" className="text-center">
-        <div className={`text-8xl font-bold tabular-nums ${zoneColor[balance.zone]}`}>
+        <div className="text-8xl font-bold tabular-nums" style={scoreColor}>
           <AnimatedCounter value={balance.score} />
         </div>
         <div className="text-text-secondary mt-1 text-lg">Balance Score</div>
@@ -100,24 +90,28 @@ function ActiveMeter({ balance }) {
           <div className="absolute top-0 bottom-0 left-[35%] right-[35%] bg-balanced-soft zone-pattern-solid rounded-full overflow-hidden" />
 
           <div
-            className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full transition-[left] duration-75 ${zoneBg[balance.zone]} ${zoneGlow[balance.zone]}${!reducedMotion && balance.zone === 'balanced' ? ' animate-[balance-puck-pulse_1.5s_ease-in-out_infinite]' : ''}`}
-            style={{ left: `calc(${balance.ratio * 100}% - 10px)` }}
+            className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full transition-[left] duration-75 ${zoneGlow[balance.zone]}${!reducedMotion && balance.zone === 'balanced' ? ' animate-[balance-puck-pulse_1.5s_ease-in-out_infinite]' : ''}`}
+            style={{ left: `calc(${balance.ratio * 100}% - 10px)`, backgroundColor: markerColor }}
           />
 
           <div className="absolute top-0 bottom-0 left-1/2 w-px bg-border-strong" />
-          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-text-muted whitespace-nowrap">
-            Target: Center
+        </div>
+
+        {/* Target label group — properly spaced */}
+        <div className="flex flex-col items-center gap-1.5 mt-3" style={{ lineHeight: 1.2 }}>
+          <span className="text-text-muted text-sm">Target: Center</span>
+          <span className="font-bold text-text-primary text-[0.95rem]" style={scoreColor}>
+            {zi ? zi.label : 'Centered'}
           </span>
         </div>
 
-        <div className="flex justify-between text-xs text-text-secondary mt-3">
+        <div className="flex justify-between text-xs text-text-secondary">
           <span>All Left</span>
-          <span>Centered</span>
           <span>All Right</span>
         </div>
       </div>
 
-      {/* Zone + Timer row — live region announces zone changes */}
+      {/* Zone + Timer row */}
       <div className="flex justify-between items-center" aria-live="polite" aria-atomic="true">
         <ZoneBadge zone={balance.zone} />
         <div className="text-text-secondary font-mono text-lg">
@@ -131,13 +125,15 @@ function ActiveMeter({ balance }) {
   );
 }
 
-export default function BalanceMeter({ balance, connected, demoMode, calibrated }) {
+export default function BalanceMeter({ balance, connected, demoMode, calibrated, patientName, onConnect, onDemo }) {
   if (!connected) {
     return (
-      <div className="text-center py-16">
-        <p className="text-3xl text-text-muted font-medium">No connection</p>
-        <p className="text-text-muted mt-2">Connect a board or enable Demo Mode to start.</p>
-      </div>
+      <LiveBalanceEmptyState
+        profileName={patientName}
+        isCalibrated={calibrated}
+        onConnect={onConnect}
+        onDemo={onDemo}
+      />
     );
   }
 

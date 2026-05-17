@@ -21,13 +21,15 @@ const TRAIL_LENGTH = 12;
 const RATIO_MIN = 0.3;
 const RATIO_MAX = 0.7;
 
-export default function BalanceBirdGame({ balance, onScoreUpdate }) {
+export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, demoMode }) {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('ready');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
   const [shaking, setShaking] = useState(false);
   const [gameStats, setGameStats] = useState(null);
+  const [savedToHistory, setSavedToHistory] = useState(false);
+  const gameStartTimeRef = useRef(null);
   const [highScore, setHighScore] = useState(() => {
     try { return parseInt(localStorage.getItem('balanceback_bird_highscore') || '0', 10); }
     catch { return 0; }
@@ -76,8 +78,16 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
     setScore(0);
     setLives(MAX_LIVES);
     setShaking(false);
+    setSavedToHistory(false);
     keyboardOffsetRef.current = 0;
+    gameStartTimeRef.current = new Date().toISOString();
     setGameState('playing');
+  }
+
+  function endGameEarly() {
+    if (!stateRef.current) return;
+    stateRef.current.userEnded = true;
+    finishGame(stateRef.current);
   }
 
   function triggerShake() {
@@ -307,17 +317,46 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
 
   function finishGame(s) {
     const finalScore = s.score;
-    setGameStats({
+    const elapsed = Math.floor(s.elapsed);
+    const outcome = s.userEnded ? 'user_ended' : s.lives <= 0 ? 'game_over' : 'time_complete';
+    const newHighScore = Math.max(finalScore, highScore);
+
+    const stats = {
       score: finalScore,
       obstaclesCleared: s.obstaclesCleared,
-      elapsed: Math.floor(s.elapsed),
-    });
+      elapsed,
+      outcome,
+      bestScore: newHighScore,
+    };
+    setGameStats(stats);
     setGameState('gameover');
+
     if (finalScore > highScore) {
       setHighScore(finalScore);
       localStorage.setItem('balanceback_bird_highscore', String(finalScore));
     }
     if (onScoreUpdate) onScoreUpdate(finalScore);
+
+    // Auto-save game result to session history
+    if (onGameEnd) {
+      const gameResult = {
+        id: crypto.randomUUID(),
+        type: 'game_session',
+        gameName: 'Balance Bird',
+        score: finalScore,
+        bestScoreAtTime: newHighScore,
+        durationSeconds: elapsed,
+        duration: elapsed,
+        outcome,
+        date: new Date().toISOString(),
+        startedAt: gameStartTimeRef.current,
+        endedAt: new Date().toISOString(),
+        inputMode: demoMode ? 'demo' : 'serial',
+        avgScore: 0,
+      };
+      onGameEnd(gameResult);
+      setSavedToHistory(true);
+    }
   }
 
   useGameLoop(gameLoop, gameState === 'playing');
@@ -343,6 +382,16 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
     ? { transform: `translateX(${shaking ? -4 : 4}px)` }
     : {};
 
+  const formatDuration = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  const outcomeLabel = gameStats?.outcome === 'user_ended' ? 'Ended by user'
+    : gameStats?.outcome === 'time_complete' ? 'Time complete'
+    : 'Hit obstacle';
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -356,10 +405,14 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
               {gameState === 'gameover' ? 'Play Again' : 'Start Game'}
             </button>
           )}
-          {gameState === 'gameover' && (
-            <span className="text-[#DC2626] font-medium">
-              Game Over — Score: {score}
-            </span>
+          {gameState === 'playing' && (
+            <button
+              onClick={endGameEarly}
+              className="px-5 py-2.5 rounded-lg border-2 border-[#DC2626] text-[#DC2626] bg-white font-semibold
+                         hover:bg-[#FEE2E2] transition-colors"
+            >
+              End Game
+            </button>
           )}
         </div>
         <div className="text-[#6B7280] text-sm">
@@ -387,22 +440,45 @@ export default function BalanceBirdGame({ balance, onScoreUpdate }) {
       )}
 
       {gameState === 'gameover' && gameStats && (
-        <div className="bg-white border border-[#E8E5E0] rounded-xl p-5 space-y-3"
+        <div className="bg-white border border-[#E8E5E0] rounded-xl p-6 space-y-5"
              style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <h3 className="text-[#1E293B] font-semibold text-lg">Flight Complete</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-[#1E293B]">Game Over</h3>
+            <p className="text-[#6B7280] text-sm mt-1">Balance Bird</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#2D9C6F]">{gameStats.score}</div>
-              <div className="text-xs text-[#6B7280]">Score</div>
+              <div className="text-3xl font-bold text-[#2D9C6F]">{gameStats.score}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Score</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#1E293B]">{gameStats.obstaclesCleared}</div>
-              <div className="text-xs text-[#6B7280]">Obstacles Cleared</div>
+              <div className="text-3xl font-bold text-[#1E293B]">{gameStats.bestScore}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Best</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#1E293B]">{gameStats.elapsed}s</div>
-              <div className="text-xs text-[#6B7280]">Time Survived</div>
+              <div className="text-3xl font-bold text-[#1E293B]">{formatDuration(gameStats.elapsed)}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Duration</div>
             </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-[#1E293B]">{gameStats.obstaclesCleared}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Obstacles Cleared</div>
+            </div>
+          </div>
+          <div className="text-center text-sm text-[#6B7280]">
+            Result: {outcomeLabel}
+          </div>
+          {savedToHistory && (
+            <div className="text-center text-sm text-[#2D9C6F] font-medium">
+              Saved to Session History
+            </div>
+          )}
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={startGame}
+              className="px-5 py-3 rounded-lg font-semibold bg-[#1A5C42] text-white hover:bg-[#1A5C42]/90 transition-colors"
+            >
+              Play Again
+            </button>
           </div>
         </div>
       )}

@@ -82,7 +82,7 @@ export default function GettingStartedWizard({ onComplete }) {
         return (
           <div className="text-center space-y-4">
             <p className="text-lg text-text-secondary">
-              Welcome to BalanceBack! Let&apos;s get you set up for your balance therapy journey.
+              Welcome to ReBalance! Let&apos;s get you set up for your balance therapy journey.
             </p>
             <p className="text-text-secondary">
               This will only take a moment.

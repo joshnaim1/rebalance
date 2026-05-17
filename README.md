@@ -17,7 +17,7 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Accessibility & Clinical Objectivity
 
-BalanceBack is designed to meet **WCAG 2.1 AA** compliance standards, ensuring the application is usable by patients with visual impairments, motor limitations, and cognitive differences.
+ReBalance is designed to meet **WCAG 2.1 AA** compliance standards, ensuring the application is usable by patients with visual impairments, motor limitations, and cognitive differences.
 
 ### Key Accessibility Features
 
@@ -29,7 +29,7 @@ BalanceBack is designed to meet **WCAG 2.1 AA** compliance standards, ensuring t
 
 ### Clinical Objectivity Principle
 
-BalanceBack collects only the data necessary for effective balance rehabilitation therapy. This approach maintains clinical objectivity and patient trust.
+ReBalance collects only the data necessary for effective balance rehabilitation therapy. This approach maintains clinical objectivity and patient trust.
 
 **What data IS collected:**
 

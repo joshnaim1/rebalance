@@ -18,9 +18,6 @@ function interpretScore(score) {
   return 'Needs work';
 }
 
-/**
- * Custom tooltip for the chart showing value, date, and interpretation.
- */
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
 
@@ -30,16 +27,11 @@ function CustomTooltip({ active, payload, label }) {
       role="tooltip"
     >
       <p className="font-medium mb-1">{label}</p>
-      {payload.map((entry) => {
-        const interpretation = entry.dataKey === 'avgScore'
-          ? ` — ${interpretScore(entry.value)}`
-          : '';
-        return (
-          <p key={entry.dataKey} style={{ color: entry.color }}>
-            {entry.name}: {entry.value}{interpretation}
-          </p>
-        );
-      })}
+      {payload.map((entry) => (
+        <p key={entry.dataKey} style={{ color: entry.color }}>
+          {entry.name}: {entry.value} — {interpretScore(entry.value)}
+        </p>
+      ))}
     </div>
   );
 }
@@ -49,8 +41,9 @@ export default function ProgressChart() {
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [dateRange, setDateRange] = useState('all'); // '7d' | '30d' | 'all'
 
-  // Filter sessions based on selected date range
+  // Filter to balance sessions only (exclude game-only sessions) and apply date range
   const filteredSessions = sessions.filter((s) => {
+    if (s.type === 'game_session') return false;
     if (dateRange === 'all') return true;
     const sessionDate = new Date(s.date);
     const now = new Date();
@@ -65,7 +58,6 @@ export default function ProgressChart() {
       name: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       session: i + 1,
       avgScore: s.avgScore,
-      gameScore: s.gameHighScore || 0,
       date: s.date,
     };
   });
@@ -73,7 +65,6 @@ export default function ProgressChart() {
   const totalSessions = filteredSessions.length;
   const totalTime = filteredSessions.reduce((sum, s) => sum + s.duration, 0);
   const bestScore = filteredSessions.reduce((max, s) => Math.max(max, s.avgScore), 0);
-  const bestGame = filteredSessions.reduce((max, s) => Math.max(max, s.gameHighScore || 0), 0);
 
   // Calculate previous period stats for TrendArrows
   const midpoint = Math.floor(filteredSessions.length / 2);
@@ -89,11 +80,6 @@ export default function ProgressChart() {
   const currentBestBalance = currentPeriod.reduce((max, s) => Math.max(max, s.avgScore), 0);
   const previousBestBalance = previousPeriod.length > 0
     ? previousPeriod.reduce((max, s) => Math.max(max, s.avgScore), 0)
-    : 0;
-
-  const currentBestGame = currentPeriod.reduce((max, s) => Math.max(max, s.gameHighScore || 0), 0);
-  const previousBestGame = previousPeriod.length > 0
-    ? previousPeriod.reduce((max, s) => Math.max(max, s.gameHighScore || 0), 0)
     : 0;
 
   const formatTotalTime = (secs) => {
@@ -136,7 +122,7 @@ export default function ProgressChart() {
       )}
 
       {/* Summary stats with TrendArrows */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
           {
             label: 'Total Sessions',
@@ -158,13 +144,6 @@ export default function ProgressChart() {
             color: 'text-balanced',
             current: currentBestBalance,
             previous: previousBestBalance,
-          },
-          {
-            label: 'Best Game',
-            value: bestGame,
-            color: 'text-balanced',
-            current: currentBestGame,
-            previous: previousBestGame,
           },
         ].map((stat) => (
           <div key={stat.label} className="bg-card border border-card-border rounded-xl p-4 text-center">
@@ -255,16 +234,6 @@ export default function ProgressChart() {
                   activeDot={{ r: 6 }}
                   label={{ position: 'top', fill: '#2D9C6F', fontSize: 11 }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="gameScore"
-                  name="Game Score"
-                  stroke="#D97706"
-                  strokeWidth={2}
-                  dot={{ fill: '#D97706', r: 4 }}
-                  activeDot={{ r: 6 }}
-                  label={{ position: 'bottom', fill: '#D97706', fontSize: 11 }}
-                />
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -274,8 +243,7 @@ export default function ProgressChart() {
                   <tr className="border-b border-card-border">
                     <th className="py-2 px-3 text-text-label font-medium">Session #</th>
                     <th className="py-2 px-3 text-text-label font-medium">Date</th>
-                    <th className="py-2 px-3 text-text-label font-medium">Balance Control</th>
-                    <th className="py-2 px-3 text-text-label font-medium">Game Score</th>
+                    <th className="py-2 px-3 text-text-label font-medium">Balance Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,7 +252,6 @@ export default function ProgressChart() {
                       <td className="py-2 px-3 text-text-primary">{row.session}</td>
                       <td className="py-2 px-3 text-text-secondary">{row.name}</td>
                       <td className="py-2 px-3 text-text-primary">{row.avgScore}</td>
-                      <td className="py-2 px-3 text-text-primary">{row.gameScore}</td>
                     </tr>
                   ))}
                 </tbody>

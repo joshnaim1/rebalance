@@ -1,6 +1,6 @@
 /**
  * PrivacyBanner — prominent privacy disclosure card for the Profile page.
- * Displays what BalanceBack stores and explicitly does not store.
+ * Displays what ReBalance stores and explicitly does not store.
  * Uses a distinct background with colored left border and shield icon.
  *
  * Accessibility: role="note" with aria-label for screen readers.
