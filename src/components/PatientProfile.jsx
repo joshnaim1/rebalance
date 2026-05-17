@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { getProfile, saveProfile } from '../utils/storage';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS, DIZZINESS_OPTIONS, CONFIDENCE_OPTIONS } from './FeelingCards';
-import PrivacyBanner from './PrivacyBanner';
 import PrivacyPanel from './PrivacyPanel';
 import DataTransparency from './DataTransparency';
 
@@ -387,9 +386,9 @@ export default function PatientProfile({ onNameChange }) {
         </form>
 
         {/* Right column: Privacy Panel (sticky sidebar on desktop, below form on mobile) */}
-        <aside className="lg:self-start">
+        <div className="lg:self-start">
           <PrivacyPanel />
-        </aside>
+        </div>
       </div>
     </div>
   );

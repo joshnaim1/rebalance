@@ -39,7 +39,7 @@ describe('PrivacyPanel', () => {
     render(<PrivacyPanel />);
     const panel = screen.getByTestId('privacy-panel');
     expect(panel.className).toContain('lg:sticky');
-    expect(panel.className).toContain('lg:top-4');
+    expect(panel.className).toContain('lg:top-24');
   });
 
   it('uses card background styling', () => {
