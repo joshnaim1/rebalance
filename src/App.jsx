@@ -112,22 +112,21 @@ export default function App() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex flex-col items-end">
-              <button
-                onClick={() => setShowCalibration(true)}
-                disabled={!serial.connected}
-                className="text-xs px-2.5 py-1 rounded border border-card-border text-text-secondary
-                           hover:text-text-primary transition-colors
-                           disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                {calibration ? 'Recalibrate' : 'Calibrate'}
-              </button>
-              {!serial.connected && (
-                <span className="text-xs text-text-secondary mt-0.5">
-                  Connect board to calibrate
-                </span>
-              )}
-            </div>
+            <button
+              onClick={() => setShowCalibration(true)}
+              disabled={!serial.connected}
+              title={!serial.connected ? 'Connect board to calibrate' : undefined}
+              className="text-xs px-2.5 py-1 rounded border border-card-border text-text-secondary
+                         hover:text-text-primary transition-colors
+                         disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {calibration ? 'Recalibrate' : 'Calibrate'}
+            </button>
+            {!serial.connected && (
+              <span className="text-xs text-text-secondary">
+                Connect board to calibrate
+              </span>
+            )}
             <span role="status">
               <SerialConnect serial={serial} />
             </span>
