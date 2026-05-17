@@ -11,7 +11,7 @@ export default function PrivacyPanel() {
     <aside
       role="note"
       aria-label="Privacy disclosure"
-      className="bg-card border border-card-border rounded-xl p-4 space-y-3 lg:sticky lg:top-4"
+      className="bg-card border border-card-border rounded-xl p-4 space-y-3 lg:sticky lg:top-24"
       data-testid="privacy-panel"
     >
       <div className="flex items-center gap-2">
@@ -33,6 +33,10 @@ export default function PrivacyPanel() {
           Privacy &amp; Data Practices
         </h2>
       </div>
+
+      <p className="text-xs text-text-secondary leading-relaxed">
+        BalanceBack only stores therapy-relevant information used for balance recovery and session summaries.
+      </p>
 
       <div className="space-y-3">
         <div>

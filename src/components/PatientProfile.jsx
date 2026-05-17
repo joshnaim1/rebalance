@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { getProfile, saveProfile } from '../utils/storage';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS, DIZZINESS_OPTIONS, CONFIDENCE_OPTIONS } from './FeelingCards';
-import PrivacyBanner from './PrivacyBanner';
 import PrivacyPanel from './PrivacyPanel';
 
 const PRONOUN_SUGGESTIONS = ['he/him', 'she/her', 'they/them'];
@@ -151,9 +150,6 @@ export default function PatientProfile({ onNameChange }) {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Privacy Banner - full width at top */}
-      <PrivacyBanner />
-
       {/* Two-column responsive grid: 65%/35% on desktop, single-column on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-6">
         {/* Left column: Form sections */}
@@ -383,9 +379,9 @@ export default function PatientProfile({ onNameChange }) {
         </form>
 
         {/* Right column: Privacy Panel (sticky sidebar on desktop, below form on mobile) */}
-        <aside className="lg:self-start">
+        <div className="lg:self-start">
           <PrivacyPanel />
-        </aside>
+        </div>
       </div>
     </div>
   );
