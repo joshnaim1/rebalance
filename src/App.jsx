@@ -11,6 +11,7 @@ import ProgressChart from './components/ProgressChart';
 import PatientProfile from './components/PatientProfile';
 import PageTransition from './components/PageTransition';
 import GettingStartedWizard from './components/GettingStartedWizard';
+import TherapyChat from './components/TherapyChat';
 
 const TAB_ICONS = {
   balance: (
@@ -174,6 +175,8 @@ export default function App() {
           )}
         </PageTransition>
       </main>
+
+      <TherapyChat />
     </div>
   );
 }
