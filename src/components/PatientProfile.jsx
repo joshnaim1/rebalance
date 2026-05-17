@@ -25,12 +25,12 @@ function BodySilhouette({ side, isSelected, onClick }) {
       aria-pressed={isSelected}
       className={`relative flex-1 flex flex-col items-center gap-2 py-4 rounded-lg transition-colors ${
         isSelected
-          ? 'bg-balanced/10 border-2 border-balanced text-balanced font-semibold'
+          ? 'bg-balanced-soft border-2 border-balanced text-balanced-text font-semibold'
           : 'bg-card border border-card-border text-text-secondary font-medium hover:text-text-primary'
       }`}
     >
       {isSelected && (
-        <svg className="absolute top-1.5 right-1.5 w-4 h-4 text-balanced" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <svg className="absolute top-1.5 right-1.5 w-4 h-4 text-balanced-text" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
@@ -173,8 +173,8 @@ export default function PatientProfile({ onNameChange }) {
                   value={profile.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Enter display name"
-                  className="w-full px-4 py-2.5 rounded-lg bg-card border border-card-border
-                             text-text-primary placeholder-text-muted focus:outline-none
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-card-border
+                             text-text-primary placeholder:text-text-muted focus:outline-none
                              focus:border-balanced transition-colors"
                 />
                 <p className="text-xs text-text-secondary mt-1">How you'd like to be addressed during sessions</p>
@@ -189,8 +189,8 @@ export default function PatientProfile({ onNameChange }) {
                   value={profile.preferredName}
                   onChange={(e) => handleChange('preferredName', e.target.value)}
                   placeholder="Preferred name"
-                  className="w-full px-4 py-2.5 rounded-lg bg-card border border-card-border
-                             text-text-primary placeholder-text-muted focus:outline-none
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-card-border
+                             text-text-primary placeholder:text-text-muted focus:outline-none
                              focus:border-balanced transition-colors"
                 />
               </div>
@@ -204,8 +204,8 @@ export default function PatientProfile({ onNameChange }) {
                   value={profile.pronouns}
                   onChange={(e) => handleChange('pronouns', e.target.value)}
                   placeholder="e.g., they/them"
-                  className="w-full px-4 py-2.5 rounded-lg bg-card border border-card-border
-                             text-text-primary placeholder-text-muted focus:outline-none
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-card-border
+                             text-text-primary placeholder:text-text-muted focus:outline-none
                              focus:border-balanced transition-colors mb-2"
                 />
                 <p className="text-xs text-text-secondary mt-1 mb-2">Used in session notes and summaries</p>
@@ -218,14 +218,14 @@ export default function PatientProfile({ onNameChange }) {
                         type="button"
                         aria-pressed={isSelected}
                         onClick={() => handleChange('pronouns', p)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-2.5 text-sm rounded-full transition-colors min-h-11 ${
                           isSelected
-                            ? 'border-2 border-balanced bg-balanced/10 text-balanced font-semibold'
+                            ? 'border-2 border-balanced bg-balanced-soft text-balanced-text font-semibold'
                             : 'border border-card-border bg-card text-text-secondary font-medium hover:text-text-primary hover:border-text-secondary'
                         }`}
                       >
                         {isSelected && (
-                          <svg className="w-4 h-4 text-balanced" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                          <svg className="w-4 h-4 text-balanced-text" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                             <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
@@ -252,7 +252,7 @@ export default function PatientProfile({ onNameChange }) {
                   type="date"
                   value={profile.strokeDate}
                   onChange={(e) => handleChange('strokeDate', e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg bg-card border border-card-border
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-card-border
                              text-text-primary focus:outline-none focus:border-balanced transition-colors"
                 />
               </div>
@@ -286,12 +286,12 @@ export default function PatientProfile({ onNameChange }) {
                         onClick={() => handleQuickGoalToggle(goal)}
                         className={`relative inline-flex items-center justify-center gap-1.5 py-3 px-4 rounded-lg text-sm transition-colors ${
                           isSelected
-                            ? 'border-2 border-balanced bg-balanced/10 text-balanced font-semibold'
+                            ? 'border-2 border-balanced bg-balanced-soft text-balanced-text font-semibold'
                             : 'border border-card-border bg-card text-text-secondary font-medium hover:text-text-primary hover:border-text-secondary'
                         }`}
                       >
                         {isSelected && (
-                          <svg className="absolute top-1.5 right-1.5 w-4 h-4 text-balanced" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                          <svg className="absolute top-1.5 right-1.5 w-4 h-4 text-balanced-text" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                             <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
@@ -311,8 +311,8 @@ export default function PatientProfile({ onNameChange }) {
                   onChange={(e) => handleChange('goals', e.target.value)}
                   placeholder="e.g., Stand unassisted for 60 seconds, walk 20 steps without aid"
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-lg bg-card border border-card-border
-                             text-text-primary placeholder-text-muted focus:outline-none
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-card-border
+                             text-text-primary placeholder:text-text-muted focus:outline-none
                              focus:border-balanced transition-colors resize-none"
                 />
               </div>
@@ -361,8 +361,8 @@ export default function PatientProfile({ onNameChange }) {
               onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Additional notes..."
               rows={3}
-              className="w-full px-4 py-2.5 rounded-lg bg-card border border-card-border
-                         text-text-primary placeholder-text-muted focus:outline-none
+              className="w-full px-4 py-2.5 rounded-lg bg-white border border-card-border
+                         text-text-primary placeholder:text-text-muted focus:outline-none
                          focus:border-balanced transition-colors resize-none"
             />
           </div>
@@ -370,8 +370,8 @@ export default function PatientProfile({ onNameChange }) {
           {/* Save Button */}
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-balanced text-bg font-semibold text-lg
-                       hover:bg-balanced/90 transition-colors"
+            className="w-full py-3 rounded-lg bg-balanced-text text-white font-semibold text-lg
+                       hover:bg-balanced-text/90 transition-colors"
           >
             {saved ? <SaveConfirmation reducedMotion={reducedMotion} /> : 'Save Profile'}
           </button>

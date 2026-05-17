@@ -45,17 +45,17 @@ function ActiveMeter({ balance }) {
   };
 
   const zoneGlow = {
-    balanced: 'shadow-[0_0_12px_rgba(74,222,128,0.6)]',
-    warning: 'shadow-[0_0_12px_rgba(251,191,36,0.6)]',
-    danger: 'shadow-[0_0_12px_rgba(248,113,113,0.6)]',
+    balanced: 'shadow-[0_0_12px_rgba(45,156,111,0.5)]',
+    warning: 'shadow-[0_0_12px_rgba(217,119,6,0.5)]',
+    danger: 'shadow-[0_0_12px_rgba(220,38,38,0.5)]',
     idle: '',
   };
 
   if (!balance.isActive) {
     return (
       <div className="text-center py-16">
-        <p className="text-3xl text-text-secondary font-medium">Step on the board</p>
-        <p className="text-text-secondary mt-2">Waiting for pressure...</p>
+        <p className="text-3xl text-text-muted font-medium">Step on the board</p>
+        <p className="text-text-muted mt-2">Waiting for pressure...</p>
       </div>
     );
   }
@@ -95,17 +95,17 @@ function ActiveMeter({ balance }) {
         </div>
 
         <div className="relative h-8 rounded-full">
-          <div className="absolute inset-0 bg-danger/20 zone-pattern-stripes rounded-full overflow-hidden" />
-          <div className="absolute top-0 bottom-0 left-[20%] right-[20%] bg-warning/20 zone-pattern-dots rounded-full overflow-hidden" />
-          <div className="absolute top-0 bottom-0 left-[35%] right-[35%] bg-balanced/20 zone-pattern-solid rounded-full overflow-hidden" />
+          <div className="absolute inset-0 bg-danger-soft zone-pattern-stripes rounded-full overflow-hidden" />
+          <div className="absolute top-0 bottom-0 left-[20%] right-[20%] bg-warning-soft zone-pattern-dots rounded-full overflow-hidden" />
+          <div className="absolute top-0 bottom-0 left-[35%] right-[35%] bg-balanced-soft zone-pattern-solid rounded-full overflow-hidden" />
 
           <div
             className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full transition-[left] duration-75 ${zoneBg[balance.zone]} ${zoneGlow[balance.zone]}${!reducedMotion && balance.zone === 'balanced' ? ' animate-[balance-puck-pulse_1.5s_ease-in-out_infinite]' : ''}`}
             style={{ left: `calc(${balance.ratio * 100}% - 10px)` }}
           />
 
-          <div className="absolute top-0 bottom-0 left-1/2 w-px bg-text-muted/30" />
-          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-text-secondary whitespace-nowrap">
+          <div className="absolute top-0 bottom-0 left-1/2 w-px bg-border-strong" />
+          <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-text-muted whitespace-nowrap">
             Target: Center
           </span>
         </div>
@@ -135,8 +135,8 @@ export default function BalanceMeter({ balance, connected, demoMode, calibrated 
   if (!connected) {
     return (
       <div className="text-center py-16">
-        <p className="text-3xl text-text-secondary font-medium">No connection</p>
-        <p className="text-text-secondary mt-2">Connect a board or enable Demo Mode to start.</p>
+        <p className="text-3xl text-text-muted font-medium">No connection</p>
+        <p className="text-text-muted mt-2">Connect a board or enable Demo Mode to start.</p>
       </div>
     );
   }

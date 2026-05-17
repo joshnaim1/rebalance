@@ -78,8 +78,8 @@ export default function Calibration({ valuesRef, onComplete, onCancel }) {
             <div className="flex gap-3 justify-center pt-2">
               <button
                 onClick={startCapture}
-                className="px-6 py-3 rounded-lg bg-balanced text-bg font-semibold text-lg
-                           hover:bg-balanced/90 transition-colors"
+                className="px-6 py-3 rounded-lg bg-balanced-text text-white font-semibold text-lg
+                           hover:bg-balanced-text/90 transition-colors"
               >
                 Start Calibration
               </button>

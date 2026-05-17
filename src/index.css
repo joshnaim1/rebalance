@@ -1,17 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0F172A;
-  --color-card: #1E293B;
-  --color-card-border: #334155;
-  --color-balanced: #4ADE80;
-  --color-warning: #FBBF24;
-  --color-danger: #F87171;
-  --color-focus: #22D3EE;
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #94A3B8;
-  --color-text-label: #CBD5E1;
+  --color-bg: #FAF8F5;
+  --color-card: #FFFFFF;
+  --color-card-border: #E8E5E0;
+  --color-border-strong: #D8D3CC;
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #374151;
+  --color-text-muted: #6B7280;
+  --color-text-label: #374151;
+  --color-text-disabled: #9CA3AF;
+  --color-balanced: #2D9C6F;
+  --color-balanced-text: #1A5C42;
+  --color-balanced-soft: #E8F8EF;
+  --color-warning: #D97706;
+  --color-warning-text: #92400E;
+  --color-warning-soft: #FFF8E1;
+  --color-danger: #DC2626;
+  --color-danger-text: #991B1B;
+  --color-danger-soft: #FEE2E2;
+  --color-blue-accent: #2563EB;
+  --color-blue-text: #1D4ED8;
+  --color-blue-soft: #EFF6FF;
+  --color-focus: #2563EB;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -92,4 +103,5 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  font-size: 16px;
 }

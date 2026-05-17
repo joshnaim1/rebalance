@@ -192,8 +192,8 @@ export default function GettingStartedWizard({ onComplete }) {
           <button
             onClick={handleBack}
             disabled={step === 0}
-            className="px-4 py-2 text-sm rounded-lg border border-card-border text-text-secondary
-                       hover:text-text-primary transition-colors
+            className="px-4 py-2.5 text-sm rounded-lg border border-card-border text-text-secondary
+                       hover:text-text-primary transition-colors min-h-11
                        disabled:opacity-0 disabled:pointer-events-none"
           >
             Back
@@ -202,7 +202,7 @@ export default function GettingStartedWizard({ onComplete }) {
           {step < STEPS.length - 1 ? (
             <button
               onClick={handleNext}
-              className="px-6 py-2 text-sm font-medium rounded-lg
+              className="px-6 py-2.5 text-sm font-medium rounded-lg min-h-11
                          bg-balanced text-bg hover:bg-balanced/90 transition-colors"
             >
               Next
@@ -210,7 +210,7 @@ export default function GettingStartedWizard({ onComplete }) {
           ) : (
             <button
               onClick={handleComplete}
-              className="px-6 py-2 text-sm font-medium rounded-lg
+              className="px-6 py-2.5 text-sm font-medium rounded-lg min-h-11
                          bg-balanced text-bg hover:bg-balanced/90 transition-colors"
             >
               Get Started

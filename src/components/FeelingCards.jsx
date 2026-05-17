@@ -54,7 +54,7 @@ export default function FeelingCards({ options, selected, onSelect, label }) {
                 cursor-pointer select-none
                 ${
                   isSelected
-                    ? 'border-2 border-balanced bg-balanced/10 ring-2 ring-balanced ring-offset-2 ring-offset-bg'
+                    ? 'border-2 border-balanced bg-balanced-soft ring-2 ring-balanced ring-offset-2 ring-offset-bg'
                     : 'border border-card-border bg-card hover:border-text-muted'
                 }
               `}
