@@ -149,7 +149,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             {/* Icon + wordmark */}
             <div className="flex items-center gap-2.5">
-              <ReBalanceLogo className="h-12 w-12 md:h-14 md:w-14" zoom={5} />
+              <ReBalanceLogo className="h-12 w-12 md:h-14 md:w-14" />
               <div className="flex flex-col">
                 <h1 className="text-xl text-balanced-text font-bold tracking-tight leading-tight">ReBalance</h1>
                 <span className="text-[10px] text-text-muted font-medium tracking-wide uppercase leading-tight">Objective Balance Therapy</span>

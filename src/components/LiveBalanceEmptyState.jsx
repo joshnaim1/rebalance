@@ -54,7 +54,7 @@ export default function LiveBalanceEmptyState({ profileName, isCalibrated, onCon
         <div className="absolute -top-16 right-0 w-64 h-64 rounded-full bg-balanced/5 blur-3xl pointer-events-none" aria-hidden="true" />
 
         <div className="relative text-center">
-          <ReBalanceLogo className="h-20 w-20 md:h-24 md:w-24 mx-auto mb-5" zoom={5} />
+          <ReBalanceLogo className="h-20 w-20 md:h-24 md:w-24 mx-auto mb-5" />
 
           <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-2">
             Start a Balance Session
