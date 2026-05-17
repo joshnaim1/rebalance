@@ -51,15 +51,22 @@ describe('ZoneBadge', () => {
     zones.forEach((zone) => {
       const { container } = render(<ZoneBadge zone={zone} />);
       const badge = container.querySelector(`[data-zone="${zone}"]`);
-      expect(badge.className).toContain(`bg-${zone}`);
+      expect(badge.className).toContain(`bg-${zone}-soft`);
     });
   });
 
-  it('uses dark text color for WCAG contrast compliance', () => {
-    const { container } = render(<ZoneBadge zone="balanced" />);
-    const label = container.querySelector('[data-zone="balanced"] span');
-    // The text span should have the dark color class for contrast
-    expect(label.className).toContain('text-[#0F172A]');
+  it('uses zone-specific text color tokens for WCAG contrast compliance', () => {
+    const zones = ['balanced', 'warning', 'danger'];
+    const expectedTextClasses = {
+      balanced: 'text-balanced-text',
+      warning: 'text-warning-text',
+      danger: 'text-danger-text',
+    };
+    zones.forEach((zone) => {
+      const { container } = render(<ZoneBadge zone={zone} />);
+      const badge = container.querySelector(`[data-zone="${zone}"]`);
+      expect(badge.className).toContain(expectedTextClasses[zone]);
+    });
   });
 
   it('returns null for invalid zone', () => {

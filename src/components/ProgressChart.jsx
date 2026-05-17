@@ -26,7 +26,7 @@ function CustomTooltip({ active, payload, label }) {
 
   return (
     <div
-      className="bg-[#1E293B] border border-[#334155] rounded-lg p-3 text-[#F1F5F9] text-sm"
+      className="bg-card border border-card-border rounded-lg p-3 text-text-primary text-sm"
       role="tooltip"
     >
       <p className="font-medium mb-1">{label}</p>
@@ -184,11 +184,11 @@ export default function ProgressChart() {
         <EmptyState
           icon={
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <rect x="8" y="40" width="8" height="16" rx="2" fill="#334155" />
-              <rect x="20" y="32" width="8" height="24" rx="2" fill="#334155" />
-              <rect x="32" y="24" width="8" height="32" rx="2" fill="#334155" />
-              <rect x="44" y="16" width="8" height="40" rx="2" fill="#334155" />
-              <path d="M8 12 L56 12" stroke="#4ADE80" strokeWidth="2" strokeDasharray="4 4" opacity="0.5" />
+              <rect x="8" y="40" width="8" height="16" rx="2" fill="#D8D3CC" />
+              <rect x="20" y="32" width="8" height="24" rx="2" fill="#D8D3CC" />
+              <rect x="32" y="24" width="8" height="32" rx="2" fill="#D8D3CC" />
+              <rect x="44" y="16" width="8" height="40" rx="2" fill="#D8D3CC" />
+              <path d="M8 12 L56 12" stroke="#2D9C6F" strokeWidth="2" strokeDasharray="4 4" opacity="0.5" />
             </svg>
           }
           heading="Not enough data yet"
@@ -210,7 +210,7 @@ export default function ProgressChart() {
                     key={range.key}
                     type="button"
                     onClick={() => setDateRange(range.key)}
-                    className={`px-2.5 py-1 text-xs rounded-md border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-balanced focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
+                    className={`px-2.5 py-2.5 text-xs rounded-md border transition-colors min-h-11 focus:outline-none focus-visible:ring-2 focus-visible:ring-balanced focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                       dateRange === range.key
                         ? 'bg-balanced/20 border-balanced text-balanced font-medium'
                         : 'border-card-border text-text-secondary hover:text-text-primary hover:border-balanced'
@@ -225,7 +225,7 @@ export default function ProgressChart() {
               <button
                 type="button"
                 onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
-                className="px-3 py-1.5 text-sm rounded-lg border border-card-border text-text-secondary hover:text-text-primary hover:border-balanced transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-balanced focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                className="px-3 py-2.5 text-sm rounded-lg border border-card-border text-text-secondary hover:text-text-primary hover:border-balanced transition-colors min-h-11 focus:outline-none focus-visible:ring-2 focus-visible:ring-balanced focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 aria-pressed={viewMode === 'table'}
                 data-testid="view-toggle"
               >
@@ -237,33 +237,33 @@ export default function ProgressChart() {
           {viewMode === 'chart' ? (
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" stroke="#64748B" fontSize={12} />
-                <YAxis domain={[0, 100]} stroke="#64748B" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E8E5E0" />
+                <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
+                <YAxis domain={[0, 100]} stroke="#6B7280" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <ReferenceLine y={80} stroke="#4ADE8060" strokeDasharray="6 4" label={{
-                  value: 'Goal: 80', fill: '#4ADE80', fontSize: 12, position: 'right',
+                <ReferenceLine y={80} stroke="#2D9C6F60" strokeDasharray="6 4" label={{
+                  value: 'Goal: 80', fill: '#2D9C6F', fontSize: 12, position: 'right',
                 }} />
                 <Line
                   type="monotone"
                   dataKey="avgScore"
                   name="Balance Score"
-                  stroke="#4ADE80"
+                  stroke="#2D9C6F"
                   strokeWidth={2}
-                  dot={{ fill: '#4ADE80', r: 4 }}
+                  dot={{ fill: '#2D9C6F', r: 4 }}
                   activeDot={{ r: 6 }}
-                  label={{ position: 'top', fill: '#4ADE80', fontSize: 11 }}
+                  label={{ position: 'top', fill: '#2D9C6F', fontSize: 11 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="gameScore"
                   name="Game Score"
-                  stroke="#FBBF24"
+                  stroke="#D97706"
                   strokeWidth={2}
-                  dot={{ fill: '#FBBF24', r: 4 }}
+                  dot={{ fill: '#D97706', r: 4 }}
                   activeDot={{ r: 6 }}
-                  label={{ position: 'bottom', fill: '#FBBF24', fontSize: 11 }}
+                  label={{ position: 'bottom', fill: '#D97706', fontSize: 11 }}
                 />
               </LineChart>
             </ResponsiveContainer>

@@ -118,13 +118,13 @@ describe('Feature: accessibility-interactive-ui, Property 15: Tab Navigation Acc
 
         // The first tab (balance) is active by default — verify it has highlight class
         const firstTab = tabButtons[0];
-        expect(firstTab.className).toContain('bg-balanced/10');
+        expect(firstTab.className).toContain('bg-balanced-soft');
       }),
       { numRuns: 100 }
     );
   });
 
-  it('when a tab is active, it has the bg-balanced/10 highlight class', () => {
+  it('when a tab is active, it has the bg-balanced-soft highlight class', () => {
     fc.assert(
       fc.property(tabIndexArb, (activeIndex) => {
         cleanup();
@@ -143,12 +143,12 @@ describe('Feature: accessibility-interactive-ui, Property 15: Tab Navigation Acc
         const updatedButtons = updatedNav.querySelectorAll('button');
 
         // The active tab should have the highlight class
-        expect(updatedButtons[activeIndex].className).toContain('bg-balanced/10');
+        expect(updatedButtons[activeIndex].className).toContain('bg-balanced-soft');
 
         // Other tabs should NOT have the highlight class
         updatedButtons.forEach((button, idx) => {
           if (idx !== activeIndex) {
-            expect(button.className).not.toContain('bg-balanced/10');
+            expect(button.className).not.toContain('bg-balanced-soft');
           }
         });
       }),

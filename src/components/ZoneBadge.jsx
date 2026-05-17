@@ -1,7 +1,7 @@
 /**
  * ZoneBadge — displays the current balance zone with icon + colored background + text label.
  * Uses distinct patterns (solid, dots, stripes) so zones are distinguishable without color.
- * Meets WCAG 4.5:1 contrast ratio for text/icon against background.
+ * Uses zone-specific soft backgrounds with dark zone text tokens for ≥4.5:1 contrast.
  *
  * @param {{ zone: 'balanced' | 'warning' | 'danger' }} props
  */
@@ -81,18 +81,18 @@ const ICON_COMPONENTS = {
 };
 
 /**
- * Background + pattern classes per zone.
- * Text/icon color is dark (#0F172A) to ensure ≥4.5:1 contrast against the bright zone backgrounds.
+ * Background + text classes per zone.
+ * Uses soft backgrounds with dark zone-specific text tokens for ≥4.5:1 contrast.
  *
  * Contrast ratios (calculated):
- *   - balanced (#4ADE80 bg, #0F172A text): ~7.3:1 ✓
- *   - warning  (#FBBF24 bg, #0F172A text): ~9.5:1 ✓
- *   - danger   (#F87171 bg, #0F172A text): ~4.8:1 ✓
+ *   - balanced (#E8F8EF bg, #1A5C42 text): ~7.8:1 ✓
+ *   - warning  (#FFF8E1 bg, #92400E text): ~7.2:1 ✓
+ *   - danger   (#FEE2E2 bg, #991B1B text): ~6.5:1 ✓
  */
 const ZONE_STYLES = {
-  balanced: 'bg-balanced zone-pattern-solid',
-  warning: 'bg-warning zone-pattern-dots',
-  danger: 'bg-danger zone-pattern-stripes',
+  balanced: 'bg-balanced-soft zone-pattern-solid text-balanced-text border border-balanced',
+  warning: 'bg-warning-soft zone-pattern-dots text-warning-text border border-warning',
+  danger: 'bg-danger-soft zone-pattern-stripes text-danger-text border border-danger',
 };
 
 export default function ZoneBadge({ zone }) {
@@ -108,8 +108,8 @@ export default function ZoneBadge({ zone }) {
       data-zone={zone}
       data-pattern={config.pattern}
     >
-      {IconComponent && <IconComponent className="text-[#0F172A]" />}
-      <span className="text-[#0F172A] font-semibold">{config.label}</span>
+      {IconComponent && <IconComponent className="text-current" />}
+      <span className="font-semibold">{config.label}</span>
     </span>
   );
 }

@@ -229,7 +229,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
           <button
             onClick={beginSession}
             disabled={!feeling.pain || !feeling.fatigue}
-            className="px-5 py-2.5 rounded-lg font-semibold bg-balanced text-bg hover:bg-balanced/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-3 rounded-lg font-semibold bg-balanced-text text-white hover:bg-balanced-text/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-11"
           >
             Begin Session
           </button>
@@ -265,7 +265,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
           </div>
           <button
             onClick={endSession}
-            className="px-5 py-2.5 rounded-lg font-semibold bg-danger/10 border border-danger/30 text-danger hover:bg-danger/20 transition-colors"
+            className="px-5 py-3 rounded-lg font-semibold bg-danger-soft border border-danger text-danger-text hover:bg-danger-soft/80 transition-colors min-h-11"
           >
             End Session
           </button>
@@ -304,7 +304,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
         <div className="flex justify-end">
           <button
             onClick={dismissSummary}
-            className="px-5 py-2.5 rounded-lg font-semibold bg-balanced text-bg hover:bg-balanced/90 transition-colors"
+            className="px-5 py-3 rounded-lg font-semibold bg-balanced-text text-white hover:bg-balanced-text/90 transition-colors min-h-11"
           >
             Done
           </button>
@@ -326,7 +326,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
           <button
             onClick={handleStartClick}
             disabled={!connected}
-            className="px-5 py-2.5 rounded-lg font-semibold bg-balanced text-bg hover:bg-balanced/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-3 rounded-lg font-semibold bg-balanced-text text-white hover:bg-balanced-text/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-11"
           >
             Start Session
           </button>
@@ -383,7 +383,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
           {sessions.length > 0 && (
             <button
               onClick={exportSessions}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-card border border-card-border text-text-secondary hover:text-text-primary hover:border-balanced/50 transition-colors"
+              className="px-3 py-2.5 rounded-lg text-sm font-medium bg-card border border-card-border text-text-secondary hover:text-text-primary hover:border-balanced/50 transition-colors min-h-11"
             >
               Export Sessions
             </button>
@@ -420,6 +420,12 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
                         s.avgScore >= 80 ? 'text-balanced' :
                         s.avgScore >= 50 ? 'text-warning' : 'text-danger'
                       }`}>{s.avgScore}</span>
+                      <span className={`text-xs font-medium ${
+                        s.avgScore >= 80 ? 'text-balanced-text' :
+                        s.avgScore >= 50 ? 'text-warning-text' : 'text-danger-text'
+                      }`}>
+                        {s.avgScore >= 80 ? 'Great' : s.avgScore >= 50 ? 'Fair' : 'Needs work'}
+                      </span>
                       {prevSession && (
                         <TrendArrow current={s.avgScore} previous={prevSession.avgScore} />
                       )}
@@ -430,7 +436,7 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
                     </div>
                     <button
                       onClick={() => handleDeleteSession(s.id)}
-                      className="p-1.5 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                      className="p-2.5 rounded text-text-muted hover:text-danger-text hover:bg-danger-soft transition-colors min-h-11 min-w-11"
                       aria-label={`Delete session from ${formatDate(s.date)}`}
                       title="Delete session"
                     >
@@ -448,19 +454,19 @@ export default function SessionLog({ balance, gameHighScore, connected }) {
         {/* Delete confirmation dialog */}
         {deleteConfirmId != null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
-            <div className="bg-card border border-card-border rounded-xl p-6 max-w-sm mx-4 space-y-4">
+            <div className="bg-danger-soft border border-card-border rounded-xl p-6 max-w-sm mx-4 space-y-4">
               <h3 id="delete-confirm-title" className="text-lg font-semibold text-text-primary">Delete Session?</h3>
               <p className="text-sm text-text-secondary">This action cannot be undone. The session data will be permanently removed.</p>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={cancelDelete}
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-card border border-card-border text-text-secondary hover:text-text-primary transition-colors"
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium bg-card border border-card-border text-text-secondary hover:text-text-primary transition-colors min-h-11"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-danger/10 border border-danger/30 text-danger hover:bg-danger/20 transition-colors"
+                  className="px-4 py-2.5 rounded-lg text-sm font-semibold bg-danger-soft border border-danger text-danger-text hover:bg-danger-soft/80 transition-colors min-h-11"
                 >
                   Delete
                 </button>

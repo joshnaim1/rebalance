@@ -375,8 +375,8 @@ export default function BalanceGame({ balance, onScoreUpdate }) {
           {gameState !== 'playing' && (
             <button
               onClick={startGame}
-              className="px-5 py-2.5 rounded-lg bg-balanced text-bg font-semibold
-                         hover:bg-balanced/90 transition-colors"
+              className="px-5 py-3 rounded-lg bg-balanced text-bg font-semibold
+                         hover:bg-balanced/90 transition-colors min-h-11"
             >
               {gameState === 'over' ? 'Play Again' : 'Start Game'}
             </button>
@@ -384,8 +384,8 @@ export default function BalanceGame({ balance, onScoreUpdate }) {
           {gameState === 'playing' && (
             <button
               onClick={togglePause}
-              className="px-4 py-2 rounded-lg border border-card-border text-text-secondary font-medium
-                         hover:bg-card transition-colors"
+              className="px-4 py-3 rounded-lg border border-card-border text-text-secondary font-medium
+                         hover:bg-card transition-colors min-h-11"
               data-testid="game-pause-button"
               aria-label={paused ? 'Resume game' : 'Pause game'}
             >

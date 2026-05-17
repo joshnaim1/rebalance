@@ -41,13 +41,12 @@ const EXPECTED_PATTERNS = {
   danger: 'zone-pattern-stripes',
 };
 
-// Zone background colors (hex) and text color used for contrast calculation
+// Zone background colors (soft backgrounds) and zone-specific text colors for contrast calculation
 const ZONE_COLORS = {
-  balanced: '#4ADE80',
-  warning: '#FBBF24',
-  danger: '#F87171',
+  balanced: { bg: '#E8F8EF', text: '#1A5C42' },
+  warning: { bg: '#FFF8E1', text: '#92400E' },
+  danger: { bg: '#FEE2E2', text: '#991B1B' },
 };
-const TEXT_COLOR = '#0F172A';
 
 /**
  * Computes relative luminance of a hex color per WCAG 2.1 formula.
@@ -117,8 +116,8 @@ describe('Feature: accessibility-interactive-ui, Property 2: Zone Badge Contrast
   it('for any zone config, contrast ratio between text and background is at least 4.5:1', () => {
     fc.assert(
       fc.property(zoneArb, (zone) => {
-        const bgColor = ZONE_COLORS[zone];
-        const ratio = contrastRatio(bgColor, TEXT_COLOR);
+        const { bg, text } = ZONE_COLORS[zone];
+        const ratio = contrastRatio(bg, text);
 
         // WCAG AA requires at least 4.5:1 for normal text
         expect(ratio).toBeGreaterThanOrEqual(4.5);
@@ -127,19 +126,66 @@ describe('Feature: accessibility-interactive-ui, Property 2: Zone Badge Contrast
     );
   });
 
-  it('verifies the component actually uses the dark text color for contrast', () => {
+  it('verifies the component uses zone-specific text color tokens', () => {
+    const expectedTextClasses = {
+      balanced: 'text-balanced-text',
+      warning: 'text-warning-text',
+      danger: 'text-danger-text',
+    };
+
     fc.assert(
       fc.property(zoneArb, (zone) => {
         const { container } = render(<ZoneBadge zone={zone} />);
         const badge = container.querySelector(`[data-zone="${zone}"]`);
 
-        // Text label uses dark color
-        const labelSpan = badge.querySelector('span.font-semibold');
-        expect(labelSpan.className).toContain('text-[#0F172A]');
+        // Badge uses zone-specific text color token
+        expect(badge.className).toContain(expectedTextClasses[zone]);
 
-        // Icon also uses dark color
+        // Icon inherits color via text-current
         const svg = badge.querySelector('svg');
-        expect(svg.className.baseVal || svg.getAttribute('class')).toContain('text-[#0F172A]');
+        expect(svg.className.baseVal || svg.getAttribute('class')).toContain('text-current');
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+/**
+ * Feature: warm-light-theme-accessibility, Property 7: Zone badge displays color, text, and icon for any zone
+ * For any valid zone value (balanced, warning, danger), the rendered ZoneBadge component SHALL
+ * simultaneously display a colored background, a text label matching the zone name, and an SVG icon —
+ * ensuring the zone is identifiable without relying on color alone.
+ *
+ * Validates: Requirements 8.1
+ */
+
+// Expected soft background classes per zone (warm light theme)
+const EXPECTED_BG_CLASSES = {
+  balanced: 'bg-balanced-soft',
+  warning: 'bg-warning-soft',
+  danger: 'bg-danger-soft',
+};
+
+describe('Feature: warm-light-theme-accessibility, Property 7: Zone badge displays color, text, and icon for any zone', () => {
+  it('for any zone, renders colored soft background, text label, and SVG icon simultaneously', () => {
+    fc.assert(
+      fc.property(zoneArb, (zone) => {
+        const { container } = render(<ZoneBadge zone={zone} />);
+        const badge = container.querySelector(`[data-zone="${zone}"]`);
+        expect(badge).not.toBeNull();
+
+        // 1. Colored background: zone-specific soft background class is present
+        expect(badge.className).toContain(EXPECTED_BG_CLASSES[zone]);
+
+        // 2. Text label: correct zone name is rendered
+        const labelSpan = badge.querySelector('span.font-semibold');
+        expect(labelSpan).not.toBeNull();
+        expect(labelSpan.textContent).toBe(EXPECTED_LABELS[zone]);
+
+        // 3. SVG icon: present with aria-hidden="true" (decorative, info conveyed by text)
+        const svg = badge.querySelector('svg');
+        expect(svg).not.toBeNull();
+        expect(svg.getAttribute('aria-hidden')).toBe('true');
       }),
       { numRuns: 100 }
     );

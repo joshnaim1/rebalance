@@ -102,10 +102,10 @@ export default function App() {
       )}
 
       {/* Header */}
-      <header className="border-b border-card-border">
+      <header className="bg-card border-b border-card-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold tracking-tight">BalanceBack</h1>
+            <h1 className="text-xl text-balanced-text font-bold tracking-tight">BalanceBack</h1>
             {patientName && (
               <span className="text-text-secondary text-sm">— {patientName}</span>
             )}
@@ -115,14 +115,14 @@ export default function App() {
               <button
                 onClick={() => setShowCalibration(true)}
                 disabled={!serial.connected}
-                className="text-xs px-2.5 py-1 rounded border border-card-border text-text-secondary
-                           hover:text-text-primary transition-colors
-                           disabled:opacity-30 disabled:cursor-not-allowed"
+                className="text-xs px-3 py-2.5 rounded border border-card-border bg-card text-text-secondary
+                           hover:bg-bg hover:text-text-primary hover:border-border-strong transition-colors
+                           disabled:opacity-30 disabled:cursor-not-allowed min-h-11"
               >
                 {calibration ? 'Recalibrate' : 'Calibrate'}
               </button>
               {!serial.connected && (
-                <span className="text-xs text-text-secondary mt-0.5">
+                <span className="text-xs text-text-muted mt-0.5">
                   Connect board to calibrate
                 </span>
               )}
@@ -136,15 +136,15 @@ export default function App() {
 
       {/* Tab navigation */}
       <nav className="border-b border-card-border">
-        <div className="max-w-6xl mx-auto px-4 flex gap-0">
+        <div className="max-w-6xl mx-auto px-4 flex items-center gap-1 py-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 text-sm font-medium transition-colors min-h-11 ${
                 activeTab === tab.id
-                  ? 'border-balanced text-balanced bg-balanced/10 rounded-full px-3'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'bg-balanced-soft text-balanced-text rounded-full px-4 py-2.5'
+                  : 'text-text-secondary hover:text-text-primary px-4 py-2.5'
               }`}
             >
               {TAB_ICONS[tab.id]}

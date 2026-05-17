@@ -20,7 +20,7 @@ export default function EmptyState({ icon, heading, description, action }) {
         <button
           type="button"
           onClick={action.onClick}
-          className="px-4 py-2 rounded-lg bg-balanced text-[#0F172A] font-medium hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-balanced focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="px-4 py-2.5 rounded-lg bg-balanced text-text-primary font-medium hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-balanced focus-visible:ring-offset-2 focus-visible:ring-offset-bg min-h-11"
         >
           {action.label}
         </button>
