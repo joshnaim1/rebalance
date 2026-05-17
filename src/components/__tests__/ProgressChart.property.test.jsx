@@ -101,7 +101,7 @@ describe('Feature: accessibility-interactive-ui, Property 13: Accessible Table S
         const headerTexts = Array.from(headers).map(th => th.textContent);
         expect(headerTexts).toContain('Session #');
         expect(headerTexts).toContain('Date');
-        expect(headerTexts).toContain('Balance Score');
+        expect(headerTexts).toContain('Balance Control');
         expect(headerTexts).toContain('Game Score');
 
         // Verify <tbody> with correct number of rows
