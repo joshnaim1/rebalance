@@ -139,8 +139,8 @@ export default function ProgressChart() {
             previous: previousTime,
           },
           {
-            label: 'Best Balance',
-            value: bestScore,
+            label: 'Best Balance Control',
+            value: `${bestScore} / 100`,
             color: 'text-balanced',
             current: currentBestBalance,
             previous: previousBestBalance,
@@ -176,7 +176,7 @@ export default function ProgressChart() {
       ) : (
         <div className="bg-card border border-card-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-text-primary">Balance Score Over Time</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Balance Control Over Time</h2>
             <div className="flex items-center gap-2">
               {/* Date range filter buttons */}
               <div className="flex items-center gap-1" role="group" aria-label="Date range filter">
@@ -227,7 +227,7 @@ export default function ProgressChart() {
                 <Line
                   type="monotone"
                   dataKey="avgScore"
-                  name="Balance Score"
+                  name="Balance Control"
                   stroke="#2D9C6F"
                   strokeWidth={2}
                   dot={{ fill: '#2D9C6F', r: 4 }}

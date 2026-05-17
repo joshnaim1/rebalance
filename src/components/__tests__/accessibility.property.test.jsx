@@ -97,7 +97,7 @@ vi.mock('../ProgressChart', () => ({
   default: () => (
     <div data-testid="progress-chart">
       <h2 className="sr-only">Progress Overview</h2>
-      <h3>Balance Score Over Time</h3>
+      <h3>Balance Control Over Time</h3>
       <p>ProgressChart</p>
     </div>
   ),

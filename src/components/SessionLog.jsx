@@ -13,15 +13,18 @@ import { useStreak } from '../hooks/useStreak';
 import ZoneBadge from './ZoneBadge';
 import AnimatedCounter from './AnimatedCounter';
 import ConfettiEffect from './ConfettiEffect';
+import {
+  calculateSessionMetrics,
+  isSessionMeaningful,
+  MIN_COMMIT_DURATION,
+} from '../utils/sessionAnalytics';
 import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS } from './FeelingCards';
 import CircularProgress from './CircularProgress';
-import SummaryCard from './SummaryCard';
+import SessionCompleteSummary from './SessionCompleteSummary';
 import TrendArrow from './TrendArrow';
 import EmptyState from './EmptyState';
-import AISourceDisclosure from './AISourceDisclosure';
 
 const SESSION_GOAL_SECONDS = 15;
-const MIN_SESSION_DURATION = 2;
 
 /**
  * Session lifecycle state machine:
@@ -154,6 +157,7 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
   const scoreSumRef = useRef(0);
   const scoreSamplesRef = useRef(0);
   const timeInBalancedRef = useRef(0);
+  const balanceRatiosRef = useRef([]);
 
   const activeSessionIdRef = useRef(null);
   const isCommittingRef = useRef(false);
@@ -181,6 +185,7 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
         scoreSamplesRef.current += 1;
         setScoreSum((s) => s + b.score);
         setScoreSamples((n) => n + 1);
+        balanceRatiosRef.current.push(b.percentage.left);
         if (b.score >= 70) {
           timeInBalancedRef.current += 0.5;
           setTimeInBalanced((t) => t + 0.5);
@@ -221,6 +226,7 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
     return null;
   }
 
+
   function handleStartClick() {
     setSessionPhase('feeling');
     setFeeling({ pain: null, fatigue: null });
@@ -239,6 +245,7 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
     scoreSumRef.current = 0;
     scoreSamplesRef.current = 0;
     timeInBalancedRef.current = 0;
+    balanceRatiosRef.current = [];
 
     // Enter armed state — timer starts when pressure is detected
     setSessionPhase('armed');
@@ -265,8 +272,7 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
     // Guard: concurrent commit lock
     if (isCommittingRef.current) return false;
 
-    // Guard: minimum valid session (at least 2 seconds and at least 1 sample)
-    if (sessionData.duration < MIN_SESSION_DURATION && sessionData.scoreSamples === 0) {
+    if (sessionData.duration < MIN_COMMIT_DURATION && sessionData.scoreSamples === 0) {
       return false;
     }
 
@@ -293,9 +299,9 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
       return;
     }
 
+
     if (sessionPhase !== 'active') return;
 
-    // Immediately transition to 'ending' to prevent re-entry
     setSessionPhase('ending');
 
     clearInterval(timerRef.current);
@@ -303,30 +309,44 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
     timerRef.current = null;
     sampleRef.current = null;
 
-    // Read accumulator values synchronously from refs
     const currentSum = scoreSumRef.current;
     const currentSamples = scoreSamplesRef.current;
     const currentTimeInBalanced = timeInBalancedRef.current;
+    const currentRatios = [...balanceRatiosRef.current];
     const sessionId = activeSessionIdRef.current;
 
-    // Compute session metrics
-    const avgScore = currentSamples > 0 ? Math.round(currentSum / currentSamples) : 0;
-    const balancedSeconds = Math.round(currentTimeInBalanced);
+    const metrics = calculateSessionMetrics({
+      scoreSum: currentSum,
+      scoreSamples: currentSamples,
+      timeInBalanced: currentTimeInBalanced,
+      elapsed,
+      balanceRatios: currentRatios,
+    });
+
+    const profile = getProfile();
 
     const session = {
       id: sessionId,
       date: new Date().toISOString(),
       duration: elapsed,
-      avgScore,
+      durationSeconds: elapsed,
+      avgScore: metrics.avgBalanceScore,
+      avgBalanceScore: metrics.avgBalanceScore,
+      timeInTargetZonePct: metrics.timeInTargetZonePct,
+      avgLeftPct: metrics.avgLeftPct,
+      avgRightPct: metrics.avgRightPct,
+      swayStdDev: metrics.swayStdDev,
+      validSampleCount: currentSamples,
+      scoreSamples: currentSamples,
       gameHighScore: gameHighScore || 0,
       feeling: feeling.pain && feeling.fatigue ? feeling : undefined,
-      timeInBalanced: balancedSeconds,
-      scoreSamples: currentSamples,
+      timeInBalanced: Math.round(currentTimeInBalanced),
+      affectedSide: profile.affectedSide || null,
+      isValid: metrics.isValid,
       aiNote: null,
       aiStatus: 'pending',
     };
 
-    // Commit the session (guarded — will not duplicate)
     const committed = commitSession(session);
 
     if (committed) {
@@ -334,29 +354,24 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
       setGeneratingNote(true);
       setSessionPhase('summary');
 
-      // Reset accumulator state
       setScoreSum(0);
       setScoreSamples(0);
       setTimeInBalanced(0);
 
-      // Generate summary announcement
-      const balancedPct = elapsed > 0 ? Math.round((balancedSeconds / elapsed) * 100) : 0;
-      setAnnouncement(`Session ended. You held steady balance for ${balancedPct}% of the session. Average score: ${avgScore}.`);
+      setAnnouncement(
+        `Session ended. Balance control score: ${metrics.avgBalanceScore}. Time in target zone: ${metrics.timeInTargetZonePct}%.`
+      );
 
-      // Simulate AI note generation — updates existing session by ID, does NOT create new one
       setTimeout(() => {
         setGeneratingNote(false);
-        // Update the existing session with AI note
-        const aiNote = `Balance session completed. Average score: ${avgScore}. Time in balanced zone: ${balancedSeconds}s.`;
+        const aiNote = `Balance session completed. Balance control: ${metrics.avgBalanceScore}/100. Time in target zone: ${metrics.timeInTargetZonePct}%. Weight split: ${Math.round(metrics.avgLeftPct)}% left / ${Math.round(metrics.avgRightPct)}% right.`;
         const updatedSessions = updateSessionById(sessionId, { aiNote, aiStatus: 'complete' });
         setSessions(updatedSessions);
         setLastSessionData((prev) => prev ? { ...prev, aiNote, aiStatus: 'complete' } : prev);
       }, 1500);
 
-      // Clear active session ref
       activeSessionIdRef.current = null;
     } else {
-      // Commit was blocked (already committed or invalid) — just go to summary
       setSessionPhase('summary');
       activeSessionIdRef.current = null;
     }
@@ -388,52 +403,6 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
 
   const avgScore = scoreSamples > 0 ? Math.round(scoreSum / scoreSamples) : 0;
 
-  // Build summary stats for SummaryCard
-  function buildSummaryStats() {
-    if (!lastSessionData) return { stats: [], message: '' };
-
-    const prev = getPreviousSession();
-    const balancedPct = lastSessionData.duration > 0
-      ? Math.round((lastSessionData.timeInBalanced / lastSessionData.duration) * 100)
-      : 0;
-    const prevBalancedPct = prev && prev.duration > 0 && prev.timeInBalanced != null
-      ? Math.round((prev.timeInBalanced / prev.duration) * 100)
-      : 0;
-
-    const stats = [
-      {
-        label: 'Avg Score',
-        current: lastSessionData.avgScore,
-        previous: prev ? prev.avgScore : lastSessionData.avgScore,
-      },
-      {
-        label: 'Duration (s)',
-        current: lastSessionData.duration,
-        previous: prev ? prev.duration : lastSessionData.duration,
-      },
-      {
-        label: 'Time in Balanced (%)',
-        current: balancedPct,
-        previous: prevBalancedPct,
-      },
-    ];
-
-    let message;
-    if (prev && prev.timeInBalanced != null) {
-      const diff = balancedPct - prevBalancedPct;
-      if (diff > 0) {
-        message = `You held steady balance for ${balancedPct}% of the session — that's ${diff}% better than last time!`;
-      } else if (diff < 0) {
-        message = `You held steady balance for ${balancedPct}% of the session — that's ${Math.abs(diff)}% less than last time. Keep going!`;
-      } else {
-        message = `You held steady balance for ${balancedPct}% of the session — same as last time. Consistency is key!`;
-      }
-    } else {
-      message = `You held steady balance for ${balancedPct}% of the session. Great first effort!`;
-    }
-
-    return { stats, message };
-  }
 
   // Render feeling phase
   function renderFeelingPhase() {
@@ -574,11 +543,11 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
                   <span className="font-mono text-text-primary">{formatDuration(elapsed)}</span>
                 </div>
                 <div>
-                  <span className="text-text-secondary">Avg Score: </span>
-                  <span className="font-mono text-text-primary">{avgScore}</span>
+                  <span className="text-text-secondary">Balance Control: </span>
+                  <span className="font-mono text-text-primary">{avgScore} / 100</span>
                 </div>
                 <div>
-                  <span className="text-text-secondary">Time in Balanced: </span>
+                  <span className="text-text-secondary">Time in Target Zone: </span>
                   <span className="font-mono text-text-primary">{formatDuration(Math.round(timeInBalanced))}</span>
                 </div>
               </div>
@@ -595,42 +564,14 @@ export default function SessionLog({ balance, gameHighScore, connected, demoMode
     );
   }
 
-  // Render summary phase
   function renderSummaryPhase() {
-    const { stats, message } = buildSummaryStats();
-
-    if (generatingNote) {
-      return (
-        <div className="bg-card border border-card-border rounded-xl p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-text-primary">Session Complete!</h2>
-          <div className="flex items-center gap-3 text-text-secondary" aria-live="polite">
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <span className="text-sm font-medium">Generating session note...</span>
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div className="bg-card border border-card-border rounded-xl p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-text-primary">Session Complete!</h2>
-        <SummaryCard stats={stats} message={message} />
-        <AISourceDisclosure
-          usedSources={['balance scores', 'session duration', 'self-reported pain/fatigue']}
-          notUsedSources={['dizziness', 'confidence', 'clinical observations']}
-        />
-        <div className="flex justify-end">
-          <button
-            onClick={dismissSummary}
-            className="px-5 py-3 rounded-lg font-semibold bg-balanced-text text-white hover:bg-balanced-text/90 transition-colors min-h-11"
-          >
-            Done
-          </button>
-        </div>
-      </div>
+      <SessionCompleteSummary
+        session={lastSessionData}
+        allSessions={sessions}
+        generatingNote={generatingNote}
+        onDismiss={dismissSummary}
+      />
     );
   }
 
