@@ -53,7 +53,7 @@ const TAB_ICONS = {
 
 const TABS = [
   { id: 'home', label: 'Home' },
-  { id: 'game', label: 'Game' },
+  { id: 'game', label: 'Games' },
   { id: 'sessions', label: 'Sessions' },
   { id: 'progress', label: 'Progress' },
   { id: 'profile', label: 'Profile' },
@@ -75,6 +75,13 @@ export default function App() {
 
   const valuesRef = useRef(serial.values);
   useEffect(() => { valuesRef.current = serial.values; }, [serial.values]);
+
+  useEffect(() => {
+    const tab = TABS.find(t => t.id === activeTab);
+    document.title = activeTab === 'home'
+      ? 'ReBalance'
+      : `${tab?.label || 'ReBalance'} | ReBalance`;
+  }, [activeTab]);
 
   useEffect(() => {
     if (!showTransparency) return;
@@ -168,9 +175,6 @@ export default function App() {
                 </div>
               )}
             </div>
-            {patientName && (
-              <span className="text-text-secondary text-sm">— {patientName}</span>
-            )}
           </div>
           <div className="flex items-center gap-3">
             <button

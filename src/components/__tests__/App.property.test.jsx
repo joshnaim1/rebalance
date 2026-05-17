@@ -73,7 +73,7 @@ import { getProfile } from '../../utils/storage';
 
 // Tab IDs matching the App component
 const TAB_IDS = ['balance', 'game', 'sessions', 'progress', 'profile'];
-const TAB_LABELS = ['Live Balance', 'Game', 'Sessions', 'Progress', 'Profile'];
+const TAB_LABELS = ['Live Balance', 'Games', 'Sessions', 'Progress', 'Profile'];
 
 // Arbitrary: pick a tab index (0-4)
 const tabIndexArb = fc.integer({ min: 0, max: TAB_IDS.length - 1 });
