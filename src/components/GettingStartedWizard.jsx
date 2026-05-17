@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { saveProfile, getProfile } from '../utils/storage';
+import ReBalanceLogo from './ReBalanceLogo';
 
 const STEPS = ['Welcome', 'Name', 'Affected Side', 'Goals', 'Ready'];
 
@@ -81,6 +82,7 @@ export default function GettingStartedWizard({ onComplete }) {
       case 0: // Welcome
         return (
           <div className="text-center space-y-4">
+            <ReBalanceLogo className="h-24 w-24 md:h-28 md:w-28 mx-auto" />
             <p className="text-lg text-text-secondary">
               Welcome to ReBalance! Let&apos;s get you set up for your balance therapy journey.
             </p>
