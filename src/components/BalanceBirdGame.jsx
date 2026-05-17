@@ -29,6 +29,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
   const [shaking, setShaking] = useState(false);
   const [gameStats, setGameStats] = useState(null);
   const [savedToHistory, setSavedToHistory] = useState(false);
+  const [paused, setPaused] = useState(false);
   const gameStartTimeRef = useRef(null);
   const [highScore, setHighScore] = useState(() => {
     try { return parseInt(localStorage.getItem('balanceback_bird_highscore') || '0', 10); }
@@ -36,7 +37,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
   });
 
   const reducedMotion = useReducedMotion();
-  const containerRef = useHiDPICanvas(canvasRef, CANVAS_W, CANVAS_H);
+  const { containerRef, setOnResize } = useHiDPICanvas(canvasRef, CANVAS_W, CANVAS_H);
   const stateRef = useRef(null);
   const balanceRef = useRef(balance);
   const starsRef = useRef(null);
@@ -48,6 +49,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
     if (gameState !== 'playing') return;
     const STEP = 15;
     const handleKey = (e) => {
+      if (e.key === 'Escape') { setPaused(p => !p); return; }
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         keyboardOffsetRef.current = Math.max(keyboardOffsetRef.current - STEP, -(CANVAS_H / 2));
       } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
@@ -79,6 +81,7 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
     setLives(MAX_LIVES);
     setShaking(false);
     setSavedToHistory(false);
+    setPaused(false);
     keyboardOffsetRef.current = 0;
     gameStartTimeRef.current = new Date().toISOString();
     setGameState('playing');
@@ -359,24 +362,22 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
     }
   }
 
-  useGameLoop(gameLoop, gameState === 'playing');
+  useGameLoop(gameLoop, gameState === 'playing' && !paused);
 
-  useEffect(() => {
+  const drawIdleCanvas = useCallback(() => {
     if (gameState === 'playing') return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || canvas.width === 0) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(canvas.width / CANVAS_W, canvas.height / CANVAS_H);
     drawGradientBackground(ctx, CANVAS_W, CANVAS_H);
-
-    if (gameState === 'ready') {
-      ctx.fillStyle = COLORS.hudSecondary;
-      ctx.font = '18px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText('Shift weight to fly', CANVAS_W / 2, CANVAS_H / 2);
-    }
+    if (!starsRef.current) starsRef.current = createStarField(120, CANVAS_W, CANVAS_H);
+    drawStarField(ctx, starsRef.current, Date.now() * 0.001);
   }, [gameState]);
+
+  useEffect(() => { drawIdleCanvas(); }, [drawIdleCanvas]);
+  useEffect(() => { setOnResize(drawIdleCanvas); }, [setOnResize, drawIdleCanvas]);
 
   const shakeStyle = shaking && !reducedMotion
     ? { transform: `translateX(${shaking ? -4 : 4}px)` }
@@ -393,116 +394,130 @@ export default function BalanceBirdGame({ balance, onScoreUpdate, onGameEnd, dem
     : 'Hit obstacle';
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {gameState !== 'playing' && (
-            <button
-              onClick={startGame}
-              className="px-5 py-2.5 rounded-lg border-2 border-[#2D9C6F] text-[#2D9C6F] bg-white font-semibold
-                         hover:bg-[#E8F8EF] transition-colors"
-            >
-              {gameState === 'gameover' ? 'Play Again' : 'Start Game'}
-            </button>
-          )}
-          {gameState === 'playing' && (
-            <button
-              onClick={endGameEarly}
-              className="px-5 py-2.5 rounded-lg border-2 border-[#DC2626] text-[#DC2626] bg-white font-semibold
-                         hover:bg-[#FEE2E2] transition-colors"
-            >
-              End Game
-            </button>
-          )}
-        </div>
-        <div className="text-[#6B7280] text-sm">
-          High Score: <span className="text-[#1E293B] font-mono font-bold">{highScore}</span>
-        </div>
-      </div>
-
+    <div>
       <div
         ref={containerRef}
-        className="rounded-xl overflow-hidden border border-[#E8E5E0]"
+        className="rounded-xl overflow-hidden border border-[#E8E5E0] relative bg-[#0B1120]"
         style={{ ...shakeStyle, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', aspectRatio: `${CANVAS_W}/${CANVAS_H}` }}
       >
         <canvas
           ref={canvasRef}
           className="w-full h-full"
         />
+
+        {gameState === 'playing' && !paused && (
+          <button
+            onClick={() => setPaused(true)}
+            className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-black/30 hover:bg-black/50 text-white/80 hover:text-white transition-colors"
+            title="Pause (Esc)"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <rect x="5" y="3" width="4" height="14" rx="1" />
+              <rect x="11" y="3" width="4" height="14" rx="1" />
+            </svg>
+          </button>
+        )}
+
+        {gameState === 'playing' && paused && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
+            <div className="text-center space-y-5 mx-4 max-w-xs w-full">
+              <h3 className="text-2xl font-bold text-white drop-shadow-lg">Paused</h3>
+              <p className="text-white/50 text-sm">Press Esc to resume</p>
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  onClick={() => setPaused(false)}
+                  className="px-8 py-3 rounded-lg font-semibold bg-[#2D9C6F] text-white hover:bg-[#238c5f] transition-colors shadow-lg w-40"
+                >
+                  Resume
+                </button>
+                <button
+                  onClick={endGameEarly}
+                  className="px-8 py-3 rounded-lg font-semibold bg-transparent border-2 border-[#DC2626] text-[#DC2626] hover:bg-[#DC2626]/10 transition-colors w-40"
+                >
+                  End Game
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'ready' && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="text-center space-y-5 mx-4 max-w-sm w-full">
+              <div>
+                <h3 className="text-2xl font-bold text-white drop-shadow-lg">Balance Bird</h3>
+                <p className="text-white/60 text-sm mt-1">High Score: <span className="font-mono font-bold text-white/90">{highScore}</span></p>
+              </div>
+              <ul className="space-y-2 text-sm text-white/80 text-left">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#4ADE80]">&#9650;&#9660;</span>
+                  <span>Lean left/right on your balance board to fly up and down (or use arrow keys / W/S)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#60A5FA]">&#9644;</span>
+                  <span>Navigate through the gaps between the barriers</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#F87171]">&#9679;</span>
+                  <span>You have 3 lives — collisions cost one life</span>
+                </li>
+              </ul>
+              <button
+                onClick={startGame}
+                className="px-8 py-3 rounded-lg font-semibold bg-[#2D9C6F] text-white hover:bg-[#238c5f] transition-colors shadow-lg"
+              >
+                Start Game
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'gameover' && gameStats && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
+            <div className="bg-white rounded-xl p-6 space-y-5 mx-4 max-w-md w-full"
+                 style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-[#1E293B]">Game Over</h3>
+                <p className="text-[#6B7280] text-sm mt-1">Balance Bird</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-[#2D9C6F]">{gameStats.score}</div>
+                  <div className="text-xs text-[#6B7280] mt-1">Score</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-[#1E293B]">{gameStats.bestScore}</div>
+                  <div className="text-xs text-[#6B7280] mt-1">Best</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-[#1E293B]">{formatDuration(gameStats.elapsed)}</div>
+                  <div className="text-xs text-[#6B7280] mt-1">Duration</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-[#1E293B]">{gameStats.obstaclesCleared}</div>
+                  <div className="text-xs text-[#6B7280] mt-1">Obstacles Cleared</div>
+                </div>
+              </div>
+              <div className="text-center text-sm text-[#6B7280]">
+                Result: {outcomeLabel}
+              </div>
+              {savedToHistory && (
+                <div className="text-center text-sm text-[#2D9C6F] font-medium">
+                  Saved to Session History
+                </div>
+              )}
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={startGame}
+                  className="px-5 py-3 rounded-lg font-semibold bg-[#1A5C42] text-white hover:bg-[#1A5C42]/90 transition-colors"
+                >
+                  Play Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {gameState === 'playing' && (
-        <div className="flex justify-center gap-6 text-sm text-[#6B7280]">
-          <span>Lean to move up and down</span>
-          <span>Navigate through the gaps</span>
-          <span>{lives} {lives === 1 ? 'life' : 'lives'} remaining</span>
-        </div>
-      )}
-
-      {gameState === 'gameover' && gameStats && (
-        <div className="bg-white border border-[#E8E5E0] rounded-xl p-6 space-y-5"
-             style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-[#1E293B]">Game Over</h3>
-            <p className="text-[#6B7280] text-sm mt-1">Balance Bird</p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-[#2D9C6F]">{gameStats.score}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Score</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-[#1E293B]">{gameStats.bestScore}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Best</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-[#1E293B]">{formatDuration(gameStats.elapsed)}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Duration</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-[#1E293B]">{gameStats.obstaclesCleared}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Obstacles Cleared</div>
-            </div>
-          </div>
-          <div className="text-center text-sm text-[#6B7280]">
-            Result: {outcomeLabel}
-          </div>
-          {savedToHistory && (
-            <div className="text-center text-sm text-[#2D9C6F] font-medium">
-              Saved to Session History
-            </div>
-          )}
-          <div className="flex justify-center gap-3">
-            <button
-              onClick={startGame}
-              className="px-5 py-3 rounded-lg font-semibold bg-[#1A5C42] text-white hover:bg-[#1A5C42]/90 transition-colors"
-            >
-              Play Again
-            </button>
-          </div>
-        </div>
-      )}
-
-      {gameState === 'ready' && (
-        <div className="bg-white border border-[#E8E5E0] rounded-xl p-5 space-y-3"
-             style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <h3 className="text-[#1E293B] font-semibold text-base">How to Play</h3>
-          <ul className="space-y-2 text-sm text-[#6B7280]">
-            <li className="flex items-start gap-2">
-              <span className="text-[#2D9C6F]">&#9650;&#9660;</span>
-              <span>Lean left/right on your balance board to fly up and down (or use arrow keys / W/S)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#2563EB]">&#9644;</span>
-              <span>Navigate through the gaps between the barriers</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#DC2626]">&#9679;</span>
-              <span>You have 3 lives — collisions cost one life</span>
-            </li>
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

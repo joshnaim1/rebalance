@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 export function useHiDPICanvas(canvasRef, logicalW, logicalH) {
   const containerRef = useRef(null);
+  const onResizeRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -20,6 +21,7 @@ export function useHiDPICanvas(canvasRef, logicalW, logicalH) {
       if (ctx) {
         ctx.scale(dpr, dpr);
       }
+      if (onResizeRef.current) onResizeRef.current();
     }
 
     resize();
@@ -28,5 +30,7 @@ export function useHiDPICanvas(canvasRef, logicalW, logicalH) {
     return () => ro.disconnect();
   }, [canvasRef, logicalW, logicalH]);
 
-  return containerRef;
+  const setOnResize = useCallback((fn) => { onResizeRef.current = fn; }, []);
+
+  return { containerRef, setOnResize };
 }

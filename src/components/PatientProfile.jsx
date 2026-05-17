@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getProfile, saveProfile } from '../utils/storage';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import FeelingCards, { PAIN_OPTIONS, FATIGUE_OPTIONS, DIZZINESS_OPTIONS, CONFIDENCE_OPTIONS } from './FeelingCards';
@@ -114,8 +115,11 @@ function SaveConfirmation({ reducedMotion }) {
 
 export default function PatientProfile({ onNameChange }) {
   const [profile, setProfile] = useState(() => getProfile());
+  const [savedProfile, setSavedProfile] = useState(() => getProfile());
   const [saved, setSaved] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  const isDirty = JSON.stringify(profile) !== JSON.stringify(savedProfile);
 
   function handleChange(field, value) {
     setProfile((p) => ({ ...p, [field]: value }));
@@ -142,11 +146,17 @@ export default function PatientProfile({ onNameChange }) {
   }
 
   function handleSave(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     saveProfile(profile);
+    setSavedProfile({ ...profile });
     setSaved(true);
     if (onNameChange) onNameChange(profile.preferredName || profile.name);
     setTimeout(() => setSaved(false), 3000);
+  }
+
+  function handleDiscard() {
+    setProfile({ ...savedProfile });
+    setSaved(false);
   }
 
   return (
@@ -364,25 +374,56 @@ export default function PatientProfile({ onNameChange }) {
             />
           </div>
 
-          {/* Save Button */}
-          <button
-            type="submit"
-            className="w-full py-3 rounded-lg bg-balanced-text text-white font-semibold text-lg
-                       hover:bg-balanced-text/90 transition-colors"
-          >
-            {saved ? <SaveConfirmation reducedMotion={reducedMotion} /> : 'Save Profile'}
-          </button>
-
-          {/* Accessible save announcement */}
-          <div aria-live="polite" aria-atomic="true" className="sr-only">
-            {saved ? 'Profile saved' : ''}
-          </div>
         </form>
 
         {/* Right column: Privacy Panel (sticky sidebar on desktop, below form on mobile) */}
         <div className="lg:self-start">
           <PrivacyPanel />
         </div>
+      </div>
+
+      {/* Sticky save/discard bar */}
+      {createPortal(
+        <div
+          className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ${
+            isDirty || saved ? 'translate-y-0' : 'translate-y-full'
+          } bg-white border-t border-card-border shadow-[0_-4px_24px_rgba(0,0,0,0.1)]`}
+        >
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-text-secondary">
+              {saved
+                ? <SaveConfirmation reducedMotion={reducedMotion} />
+                : 'You have unsaved changes'}
+            </p>
+            <div className="flex items-center gap-3">
+              {isDirty && (
+                <button
+                  type="button"
+                  onClick={handleDiscard}
+                  className="px-5 py-2.5 rounded-lg border border-card-border text-text-secondary font-medium
+                             hover:bg-[#FEE2E2] hover:text-[#DC2626] hover:border-[#DC2626] transition-colors text-sm"
+                >
+                  Discard
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={!isDirty && !saved}
+                className="px-6 py-2.5 rounded-lg bg-balanced-text text-white font-semibold
+                           hover:bg-balanced-text/90 transition-colors text-sm disabled:opacity-50"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Accessible save announcement */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {saved ? 'Profile saved' : ''}
       </div>
     </div>
   );
