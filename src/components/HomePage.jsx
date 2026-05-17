@@ -263,7 +263,7 @@ export default function HomePage({ patientName, isConnected, isCalibrated, onCon
             <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
               {/* Left: copy */}
               <div className="flex-1 min-w-0">
-                <ReBalanceLogo className="h-14 w-14 mb-4" />
+                <ReBalanceLogo className="h-20 w-20 md:h-28 md:w-28 mb-5" zoom={5} />
                 <p className="text-sm font-medium text-balanced mb-2 uppercase tracking-widest">{greeting}</p>
                 <h2 className="text-3xl md:text-5xl font-extrabold text-text-primary leading-tight mb-4">
                   Objective balance<br />

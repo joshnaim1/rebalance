@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import ReBalanceLogo from './ReBalanceLogo';
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -377,15 +376,17 @@ export default function TherapyChat() {
             setIsMinimized(false);
           }
         }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#0F172A] border-2 border-[#4ADE80] flex items-center justify-center shadow-lg hover:border-green-400 transition-all overflow-hidden p-1.5"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#4ADE80] text-[#0F172A] flex items-center justify-center shadow-lg hover:bg-green-400 transition-all"
         aria-label={isOpen ? 'Close therapy assistant' : 'Open therapy assistant'}
       >
         {isOpen && !isMinimized ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         ) : (
-          <ReBalanceLogo className="h-full w-full" alt="" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
         )}
       </button>
 
@@ -408,12 +409,9 @@ export default function TherapyChat() {
           className={`${panelSizeClass} bg-[#1E293B] border border-[#334155] rounded-2xl shadow-2xl flex flex-col overflow-hidden`}
         >
           <div className="flex items-center justify-between px-3 py-3 bg-[#0F172A] border-b border-[#334155] shrink-0 gap-2">
-            <div className="min-w-0 flex-1 flex items-center gap-2">
-              <ReBalanceLogo className="h-7 w-7 shrink-0" alt="" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#F1F5F9] truncate">Therapy Assistant</p>
-                <p className="text-xs text-[#64748B] truncate">Balance sessions only · No game scores</p>
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-[#F1F5F9] truncate">Therapy Assistant</p>
+              <p className="text-xs text-[#64748B] truncate">Balance sessions only · No game scores</p>
             </div>
             <div className="flex items-center shrink-0">
               {hasSavedChat && isFreshChat && userMessageCount === 0 && (
